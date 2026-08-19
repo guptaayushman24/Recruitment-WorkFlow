@@ -1,0 +1,14 @@
+{
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Spring Boot-ExtractionserviceApplication<extractionservice>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.example.extractionservice.ExtractionserviceApplication",
+      "projectName": "extractionservice",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}
