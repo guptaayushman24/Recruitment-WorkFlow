@@ -11,3 +11,8 @@ spring:
         model: llama3.2
       embedding:
         model: nomic-embed-text
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/recruitment_workflow
+    username: postgres
+    password: root

@@ -1,13 +1,10 @@
 package com.example.extractionservice.serviceimpl;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
-import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +12,7 @@ import com.example.extractionservice.ai.AIAssistant;
 import com.example.extractionservice.ai.ResumeExtraction;
 import com.example.extractionservice.service.ExtractionService;
 
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,23 +41,28 @@ public class ExtractionServiceImpl implements ExtractionService{
     log.info("Project Skill {}",resumeExtraction.getProjectComponents());
     log.info(" Experience {}",resumeExtraction.getExperience());
 
-       // Converting all the three list into number from 0 to 1
-    List<float []> skillsEmbedding = embeddingModel.embed(resumeExtraction.getSkills());
+    // Each section's list of strings is joined into one block of text so that
+    // embed() returns a single vector representing the whole section.
+    float[] skillsEmbedding = embeddingModel.embed(String.join(", ", resumeExtraction.getSkills())).content().vector();
+    float[] projectEmbedding = embeddingModel.embed(String.join(", ", resumeExtraction.getProjectComponents())).content().vector();
+    float[] experienceEmbedding = embeddingModel.embed(String.join(", ", resumeExtraction.getExperience())).content().vector();
 
-     List<float []> projectEmbedding = embeddingModel.embed(resumeExtraction.getProjectComponents());
-
-     List<float []> experienceEmbedding = embeddingModel.embed(resumeExtraction.getExperience());
-
-     if (skillsEmbedding!=null && projectEmbedding!=null && experienceEmbedding!=null){
-        // Save in the database find the weighted average of all the embeddings 
-     }
-     else{
-       log.error("Some error occured while generatnig the embedding");
-     }
+    float[] weightedEmbedding = weightedAverage(skillsEmbedding, projectEmbedding, experienceEmbedding);
+    log.info("Weighted resume embedding :::: {}", weightedEmbedding);
 
     return CompletableFuture.completedFuture(resumeExtraction);
-    
-   
+  }
+
+  private static final float SKILLS_WEIGHT = 0.5f;
+  private static final float PROJECTS_WEIGHT = 0.2f;
+  private static final float EXPERIENCE_WEIGHT = 0.3f;
+
+  private float[] weightedAverage(float[] skills, float[] projects, float[] experience) {
+    float[] result = new float[skills.length];
+    for (int i = 0; i < skills.length; i++) {
+      result[i] = skills[i] * SKILLS_WEIGHT + projects[i] * PROJECTS_WEIGHT + experience[i] * EXPERIENCE_WEIGHT;
+    }
+    return result;
   }
 
 }
