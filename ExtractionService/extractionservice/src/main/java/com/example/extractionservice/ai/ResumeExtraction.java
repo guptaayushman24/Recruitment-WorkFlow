@@ -8,5 +8,5 @@ public class ResumeExtraction{
         List<String> skills;
         List<String> projectComponents;
         List<String> experience;
-        String messaage;
+        String message;
 }

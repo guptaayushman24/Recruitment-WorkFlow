@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.extractionservice.ai.AIAssistant;
 import com.example.extractionservice.ai.ResumeExtraction;
+import com.example.extractionservice.repository.SaveUserDetail;
 import com.example.extractionservice.service.ExtractionService;
 
 import dev.langchain4j.model.embedding.EmbeddingModel;
@@ -36,10 +37,10 @@ public class ExtractionServiceImpl implements ExtractionService{
     }
 
     ResumeExtraction resumeExtraction = aiAssistant.extractSections(text);
-    log.info("Resume extraction finished :::: {}", resumeExtraction);
+   /*  log.info("Resume extraction finished :::: {}", resumeExtraction);
     log.info("Extraction Skill {}",resumeExtraction.getSkills());
     log.info("Project Skill {}",resumeExtraction.getProjectComponents());
-    log.info(" Experience {}",resumeExtraction.getExperience());
+    log.info(" Experience {}",resumeExtraction.getExperience()); */
 
     // Each section's list of strings is joined into one block of text so that
     // embed() returns a single vector representing the whole section.

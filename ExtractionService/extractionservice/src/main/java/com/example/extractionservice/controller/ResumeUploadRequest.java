@@ -7,4 +7,7 @@ import lombok.Data;
 @Data
 public class ResumeUploadRequest {
     private MultipartFile file;
+    private String firstName;
+    private String lastName;
+    private String email;
 }
