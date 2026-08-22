@@ -2,7 +2,6 @@ package com.example.extractionservice.repository;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
-import java.util.Objects;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -43,5 +42,9 @@ public class SaveUserDetail {
                         .resumePath(rs.getString("resume_path"))
                         .build(),
                 id);
+    }
+
+    public Integer fetchUserIdFromEmail (String userEmail){
+        return jdbcTemplate.queryForObject(SQLQuery.FETCH_USER_ID_FROM_EMAIL, Integer.class, userEmail);
     }
 }
