@@ -47,7 +47,7 @@ public class ExtractController {
       // backing storage is not guaranteed to survive past this request
       byte[] resumeBytes = request.getFile().getBytes();
 
-      extractionServiceImpl.extractSkillProjectComponentExpierence(resumeBytes)
+      extractionServiceImpl.extractSkillProjectComponentExpierence(resumeBytes,request.getEmail())
               .thenAccept(resumeExtraction -> log.info("Resume extraction finished :::: {}", resumeExtraction))
               .exceptionally(e -> {
                 log.error("Exception Occured while processing resume in background :::: {}", e);
@@ -59,7 +59,7 @@ public class ExtractController {
         UserData userData = new UserData();
         userData.setFirstName(request.getFirstName());
         userData.setLastName(request.getLastName());
-        userData.setEmail(request.getLastName());
+        userData.setEmail(request.getEmail());
         userData.setResumePath(filePath.toString());
 
         saveUserDetail.saveUserDetail(userData);

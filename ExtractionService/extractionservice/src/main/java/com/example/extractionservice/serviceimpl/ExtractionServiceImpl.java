@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.example.extractionservice.ai.AIAssistant;
 import com.example.extractionservice.ai.ResumeExtraction;
 import com.example.extractionservice.repository.SaveUserDetail;
+import com.example.extractionservice.repository.SaveUserEmbedding;
 import com.example.extractionservice.service.ExtractionService;
 
 import dev.langchain4j.model.embedding.EmbeddingModel;
@@ -23,10 +24,12 @@ import lombok.extern.slf4j.Slf4j;
 public class ExtractionServiceImpl implements ExtractionService{
   private final AIAssistant aiAssistant;
   private final EmbeddingModel embeddingModel;
+  private final SaveUserDetail saveUserDetail;
+  private final SaveUserEmbedding saveUserEmbedding;
 
   @Async
   @Override
-  public CompletableFuture<ResumeExtraction> extractSkillProjectComponentExpierence(byte[] resumeBytes) {
+  public CompletableFuture<ResumeExtraction> extractSkillProjectComponentExpierence(byte[] resumeBytes,String userEmail) {
     String text = "";
     try (PDDocument document = Loader.loadPDF(resumeBytes)) {
       text = new PDFTextStripper().getText(document);
@@ -51,6 +54,11 @@ public class ExtractionServiceImpl implements ExtractionService{
     float[] weightedEmbedding = weightedAverage(skillsEmbedding, projectEmbedding, experienceEmbedding);
     log.info("Weighted resume embedding :::: {}", weightedEmbedding);
 
+    if (weightedEmbedding.length>0){
+      // Feth the userId from the userEmail and insert in the table
+       Integer userId = saveUserDetail.fetchUserIdFromEmail(userEmail);
+       saveUserEmbedding.saveUserEmbedding(userId,weightedEmbedding,11,0);
+    }
     return CompletableFuture.completedFuture(resumeExtraction);
   }
 
