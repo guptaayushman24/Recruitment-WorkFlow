@@ -6,4 +6,5 @@ import com.example.extractionservice.ai.ResumeExtraction;
 
 public interface ExtractionService {
    public CompletableFuture<ResumeExtraction> extractSkillProjectComponentExpierence (byte[] resumeBytes,String userEmail);
+   public CompletableFuture<ResumeExtraction> extractSkillProjectComponentExpierenceFromJobDescription (String jobDescription);
 }

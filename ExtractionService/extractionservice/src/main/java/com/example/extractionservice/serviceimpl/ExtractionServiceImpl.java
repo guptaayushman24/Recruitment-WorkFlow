@@ -9,7 +9,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.example.extractionservice.ai.AIAssistant;
+import com.example.extractionservice.ai.AIAssistantJobDescription;
 import com.example.extractionservice.ai.ResumeExtraction;
+import com.example.extractionservice.repository.SaveJobEmbedding;
 import com.example.extractionservice.repository.SaveUserDetail;
 import com.example.extractionservice.repository.SaveUserEmbedding;
 import com.example.extractionservice.service.ExtractionService;
@@ -22,10 +24,16 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class ExtractionServiceImpl implements ExtractionService{
+   private static final float SKILLS_WEIGHT = 0.5f;
+  private static final float PROJECTS_WEIGHT = 0.2f;
+  private static final float EXPERIENCE_WEIGHT = 0.3f;
+
   private final AIAssistant aiAssistant;
+  private final AIAssistantJobDescription aiAssistantJobDescription;
   private final EmbeddingModel embeddingModel;
   private final SaveUserDetail saveUserDetail;
   private final SaveUserEmbedding saveUserEmbedding;
+  private final SaveJobEmbedding saveJobEmbedding;
 
   @Async
   @Override
@@ -52,7 +60,7 @@ public class ExtractionServiceImpl implements ExtractionService{
     float[] experienceEmbedding = embeddingModel.embed(String.join(", ", resumeExtraction.getExperience())).content().vector();
 
     float[] weightedEmbedding = weightedAverage(skillsEmbedding, projectEmbedding, experienceEmbedding);
-    log.info("Weighted resume embedding :::: {}", weightedEmbedding);
+    // log.info("Weighted resume embedding :::: {}", weightedEmbedding);
 
     if (weightedEmbedding.length>0){
       // Feth the userId from the userEmail and insert in the table
@@ -62,9 +70,6 @@ public class ExtractionServiceImpl implements ExtractionService{
     return CompletableFuture.completedFuture(resumeExtraction);
   }
 
-  private static final float SKILLS_WEIGHT = 0.5f;
-  private static final float PROJECTS_WEIGHT = 0.2f;
-  private static final float EXPERIENCE_WEIGHT = 0.3f;
 
   private float[] weightedAverage(float[] skills, float[] projects, float[] experience) {
     float[] result = new float[skills.length];
@@ -72,6 +77,28 @@ public class ExtractionServiceImpl implements ExtractionService{
       result[i] = skills[i] * SKILLS_WEIGHT + projects[i] * PROJECTS_WEIGHT + experience[i] * EXPERIENCE_WEIGHT;
     }
     return result;
+  }
+
+  @Override
+  public CompletableFuture<ResumeExtraction> extractSkillProjectComponentExpierenceFromJobDescription(
+      String jobDescription) {
+        ResumeExtraction jobDescriptionExtraction = aiAssistantJobDescription.extractSections(jobDescription);
+
+        float [] skillsEmbeddingJobDescription = embeddingModel.embed(String.join(",", jobDescriptionExtraction.getSkills())).content().vector();
+
+        float [] projectEmbeddingJobDescription = embeddingModel.embed(
+          String.join(",",jobDescriptionExtraction.getProjectComponents())).content().vector();
+
+          float [] expericeEmbeddingJobDescription = embeddingModel.embed(String.join(",",jobDescriptionExtraction.getExperience())).content().vector();
+
+            float[] weightedEmbeddingJobDescription = weightedAverage(skillsEmbeddingJobDescription, projectEmbeddingJobDescription, expericeEmbeddingJobDescription);
+
+            if (weightedEmbeddingJobDescription.length>0){
+              // Save Job Embedding Here
+              saveJobEmbedding.saveJobEmbedding(jobDescription, weightedEmbeddingJobDescription);
+            }
+
+            return CompletableFuture.completedFuture(jobDescriptionExtraction);
   }
 
 }
