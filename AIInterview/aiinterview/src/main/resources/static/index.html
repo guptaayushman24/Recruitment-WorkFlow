@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>WS Chat</title>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+</head>
+<body>
+  <h3>Group chat</h3>
+  <input id="name" placeholder="your name" />
+  <input id="msg" placeholder="message" />
+  <button onclick="sendMsg()">Send</button>
+  <ul id="log"></ul>
+
+  <hr />
+
+  <h3>Private chat</h3>
+  <input id="myId" placeholder="your id (e.g. alice)" />
+  <input id="peerId" placeholder="chat with id (e.g. bob)" />
+  <button onclick="startPrivateChat()">Start private chat</button>
+  <br />
+  <input id="privateMsg" placeholder="private message" disabled />
+  <button id="privateSendBtn" onclick="sendPrivateMsg()" disabled>Send</button>
+  <ul id="privateLog"></ul>
+
+  <script>
+    const client = new StompJs.Client({
+      // one handshake; then the connection stays open
+      webSocketFactory: () => new SockJS('http://localhost:8081/ws'),
+      onConnect: () => {
+        // subscribe once — future messages arrive with zero new HTTP calls
+        client.subscribe('/topic/messages', (frame) => {
+          const m = JSON.parse(frame.body);
+          const li = document.createElement('li');
+          li.textContent = m.sender + ': ' + m.content;
+          document.getElementById('log').appendChild(li);
+        });
+      }
+    });
+    client.activate();
+
+    function sendMsg() {
+      client.publish({
+        destination: '/app/chat.send',
+        body: JSON.stringify({
+          sender: document.getElementById('name').value,
+          content: document.getElementById('msg').value
+        })
+      });
+      document.getElementById('msg').value = '';
+    }
+
+    // must match GreetingController#privateTopicFor exactly - same rule on both ends
+    // so both participants compute the same topic name regardless of who is sender/receiver
+    function privateTopicFor(userA, userB) {
+      return userA < userB ? userA + '_' + userB : userB + '_' + userA;
+    }
+
+    let privateTopicSubscription = null;
+
+    function startPrivateChat() {
+      const myId = document.getElementById('myId').value.trim();
+      const peerId = document.getElementById('peerId').value.trim();
+      if (!myId || !peerId) {
+        alert('Enter both your id and the peer id');
+        return;
+      }
+
+      if (privateTopicSubscription) {
+        privateTopicSubscription.unsubscribe();
+      }
+
+      const topic = privateTopicFor(myId, peerId);
+      privateTopicSubscription = client.subscribe('/topic/private/' + topic, (frame) => {
+        const m = JSON.parse(frame.body);
+        const li = document.createElement('li');
+        li.textContent = m.senderId + ' -> ' + m.receiverId + ': ' + m.content;
+        document.getElementById('privateLog').appendChild(li);
+      });
+
+      document.getElementById('privateMsg').disabled = false;
+      document.getElementById('privateSendBtn').disabled = false;
+    }
+
+    function sendPrivateMsg() {
+      const myId = document.getElementById('myId').value.trim();
+      const peerId = document.getElementById('peerId').value.trim();
+      client.publish({
+        destination: '/app/private-message',
+        body: JSON.stringify({
+          senderId: myId,
+          receiverId: peerId,
+          content: document.getElementById('privateMsg').value
+        })
+      });
+      document.getElementById('privateMsg').value = '';
+    }
+  </script>
+</body>
+</html>

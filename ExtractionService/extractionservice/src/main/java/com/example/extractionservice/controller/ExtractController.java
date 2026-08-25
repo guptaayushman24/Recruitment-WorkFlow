@@ -7,6 +7,7 @@ import java.nio.file.StandardCopyOption;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.extractionservice.dto.ResponseDTO;
@@ -67,4 +68,12 @@ public class ExtractController {
       return ResponseEntity.accepted()
               .body(ResponseDTO.builder().message("File is uploading, processing in background").build());
   }
+
+  @PostMapping("/postjob")
+  public ResponseEntity<ResponseDTO> postJob (@RequestBody String jobDescription){
+    extractionServiceImpl.extractSkillProjectComponentExpierenceFromJobDescription(jobDescription);
+    return ResponseEntity.accepted()
+              .body(ResponseDTO.builder().message("Job posting is successfull").build());
+  }
+  // // In future will put the ADMIN check also
 }

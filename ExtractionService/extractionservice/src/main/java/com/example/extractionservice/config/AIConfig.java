@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.example.extractionservice.ai.AIAssistant;
+import com.example.extractionservice.ai.AIAssistantJobDescription;
 
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
@@ -43,6 +44,13 @@ public class AIConfig {
     @Bean
     public AIAssistant aiAssistant(ChatModel chatModel) {
         return AiServices.builder(AIAssistant.class)
+                .chatModel(chatModel)
+                .build();
+    }
+
+    @Bean
+    public AIAssistantJobDescription aiAssistantJobDescription(ChatModel chatModel) {
+        return AiServices.builder(AIAssistantJobDescription.class)
                 .chatModel(chatModel)
                 .build();
     }

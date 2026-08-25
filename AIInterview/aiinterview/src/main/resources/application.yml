@@ -1,0 +1,7 @@
+# spring.application.name=aiinterview
+spring:
+  application:
+    name: aiinterview
+
+server:
+  port: 8081
