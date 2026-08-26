@@ -102,7 +102,6 @@ public class ExtractionServiceImpl implements ExtractionService{
   @Override
   public CompletableFuture<ResumeExtraction> extractSkillProjectComponentExpierenceFromJobDescription(
       String jobDescription) {
-        JobDescription jobDescriptionStore = new JobDescription();
         ResumeExtraction jobDescriptionExtraction = aiAssistantJobDescription.extractSections(jobDescription);
 
         float [] skillsEmbeddingJobDescription = embeddingModel.embed(String.join(",", jobDescriptionExtraction.getSkills())).content().vector();
@@ -111,14 +110,6 @@ public class ExtractionServiceImpl implements ExtractionService{
           String.join(",",jobDescriptionExtraction.getProjectComponents())).content().vector();
 
           float [] expericeEmbeddingJobDescription = embeddingModel.embed(String.join(",",jobDescriptionExtraction.getExperience())).content().vector();
-
-          jobDescriptionStore.setJobComponents(jobDescriptionExtraction.getProjectComponents());
-          jobDescriptionStore.setJobExperience(jobDescriptionExtraction.getExperience());
-          jobDescriptionStore.setJobSkills(jobDescriptionExtraction.getSkills());
-
-          
-
-
 
             float[] weightedEmbeddingJobDescription = weightedAverage(skillsEmbeddingJobDescription, projectEmbeddingJobDescription, expericeEmbeddingJobDescription);
 
