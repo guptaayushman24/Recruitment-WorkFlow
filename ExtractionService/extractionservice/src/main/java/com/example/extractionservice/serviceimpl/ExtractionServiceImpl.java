@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.example.extractionservice.ai.AIAssistant;
 import com.example.extractionservice.ai.AIAssistantJobDescription;
 import com.example.extractionservice.ai.ResumeExtraction;
+import com.example.extractionservice.constant.CONSTANT;
 import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO;
 import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO.JobDescription;
 import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO.Resume;
@@ -19,7 +20,7 @@ import com.example.extractionservice.repository.SaveUserDetail;
 import com.example.extractionservice.repository.SaveUserEmbedding;
 import com.example.extractionservice.service.ExtractionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.cloud.spring.pubsub.core.PubSubTemplate;
+// import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class ExtractionServiceImpl implements ExtractionService{
   private final SaveUserDetail saveUserDetail;
   private final SaveUserEmbedding saveUserEmbedding;
   private final SaveJobEmbedding saveJobEmbedding;
+  private final CONSTANT constant;
 
   @Async
   @Override
@@ -83,7 +85,7 @@ public class ExtractionServiceImpl implements ExtractionService{
       // Feth the userId from the userEmail and insert in the table
        Integer userId = saveUserDetail.fetchUserIdFromEmail(userEmail);
        saveUserDetail.updateUserDate(userId, resumeExtraction.getSkills(), resume.getExperience(), resume.getProjectComponents());
-       saveUserEmbedding.saveUserEmbedding(userId,weightedEmbedding,11,0);
+       saveUserEmbedding.saveUserEmbedding(userId,weightedEmbedding,constant.PENDING,0);
     }
     return CompletableFuture.completedFuture(resumeExtraction);
   }
