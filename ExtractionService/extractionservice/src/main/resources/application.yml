@@ -13,6 +13,6 @@ spring:
         model: nomic-embed-text
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/recruitment_workflow
+    url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
     password: root

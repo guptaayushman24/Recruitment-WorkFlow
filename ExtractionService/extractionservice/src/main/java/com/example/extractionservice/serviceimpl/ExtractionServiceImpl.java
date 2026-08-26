@@ -11,10 +11,16 @@ import org.springframework.stereotype.Service;
 import com.example.extractionservice.ai.AIAssistant;
 import com.example.extractionservice.ai.AIAssistantJobDescription;
 import com.example.extractionservice.ai.ResumeExtraction;
+import com.example.extractionservice.constant.CONSTANT;
+import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO;
+import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO.JobDescription;
+import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO.Resume;
 import com.example.extractionservice.repository.SaveJobEmbedding;
 import com.example.extractionservice.repository.SaveUserDetail;
 import com.example.extractionservice.repository.SaveUserEmbedding;
 import com.example.extractionservice.service.ExtractionService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+// import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import lombok.RequiredArgsConstructor;
@@ -34,10 +40,14 @@ public class ExtractionServiceImpl implements ExtractionService{
   private final SaveUserDetail saveUserDetail;
   private final SaveUserEmbedding saveUserEmbedding;
   private final SaveJobEmbedding saveJobEmbedding;
+  private final CONSTANT constant;
 
   @Async
   @Override
   public CompletableFuture<ResumeExtraction> extractSkillProjectComponentExpierence(byte[] resumeBytes,String userEmail) {
+     // Send to the pub-sub
+    ExtractionResumeJobDescriptionDTO extractionResumeJobDescriptionDTO = new ExtractionResumeJobDescriptionDTO();
+    ObjectMapper objectMapper = new ObjectMapper();
     String text = "";
     try (PDDocument document = Loader.loadPDF(resumeBytes)) {
       text = new PDFTextStripper().getText(document);
@@ -58,6 +68,15 @@ public class ExtractionServiceImpl implements ExtractionService{
     float[] skillsEmbedding = embeddingModel.embed(String.join(", ", resumeExtraction.getSkills())).content().vector();
     float[] projectEmbedding = embeddingModel.embed(String.join(", ", resumeExtraction.getProjectComponents())).content().vector();
     float[] experienceEmbedding = embeddingModel.embed(String.join(", ", resumeExtraction.getExperience())).content().vector();
+    
+    Resume resume = new Resume();
+    resume.setExperience(resumeExtraction.getExperience());
+    resume.setSkills(resumeExtraction.getSkills());
+    resume.setProjectComponents(resumeExtraction.getProjectComponents());
+
+    extractionResumeJobDescriptionDTO.setResumeExtraction(resume);
+    // With the help of the user_email insert the skills,experiece and project_component
+
 
     float[] weightedEmbedding = weightedAverage(skillsEmbedding, projectEmbedding, experienceEmbedding);
     // log.info("Weighted resume embedding :::: {}", weightedEmbedding);
@@ -65,7 +84,8 @@ public class ExtractionServiceImpl implements ExtractionService{
     if (weightedEmbedding.length>0){
       // Feth the userId from the userEmail and insert in the table
        Integer userId = saveUserDetail.fetchUserIdFromEmail(userEmail);
-       saveUserEmbedding.saveUserEmbedding(userId,weightedEmbedding,11,0);
+       saveUserDetail.updateUserDate(userId, resumeExtraction.getSkills(), resume.getExperience(), resume.getProjectComponents());
+       saveUserEmbedding.saveUserEmbedding(userId,weightedEmbedding,constant.PENDING,0);
     }
     return CompletableFuture.completedFuture(resumeExtraction);
   }
@@ -95,7 +115,8 @@ public class ExtractionServiceImpl implements ExtractionService{
 
             if (weightedEmbeddingJobDescription.length>0){
               // Save Job Embedding Here
-              saveJobEmbedding.saveJobEmbedding(jobDescription, weightedEmbeddingJobDescription);
+              // Add the job_skills,job_experience and job_project_component
+              saveJobEmbedding.saveJobEmbedding(jobDescription, weightedEmbeddingJobDescription,jobDescriptionExtraction.getSkills(),jobDescriptionExtraction.getExperience(),jobDescriptionExtraction.getProjectComponents());
             }
 
             return CompletableFuture.completedFuture(jobDescriptionExtraction);

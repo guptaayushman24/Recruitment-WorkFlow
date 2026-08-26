@@ -2,6 +2,7 @@ package com.example.extractionservice.repository;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.List;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -46,5 +47,16 @@ public class SaveUserDetail {
 
     public Integer fetchUserIdFromEmail (String userEmail){
         return jdbcTemplate.queryForObject(SQLQuery.FETCH_USER_ID_FROM_EMAIL, Integer.class, userEmail);
+    }
+
+    public void updateUserDate (Integer userId,List<String> userSkills,List<String> userExperience,List<String> userProjectComponent){
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(SQLQuery.UPDATE_USER_DATA);
+            ps.setArray(1, connection.createArrayOf("text", userSkills.toArray(new String[0])));
+            ps.setArray(2, connection.createArrayOf("text", userExperience.toArray(new String[0])));
+            ps.setArray(3, connection.createArrayOf("text", userProjectComponent.toArray(new String[0])));
+            ps.setInt(4, userId);
+            return ps;
+        });
     }
 }

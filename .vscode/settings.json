@@ -1,3 +1,4 @@
 {
-  "java.configuration.updateBuildConfiguration": "interactive"
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "livePreview.defaultPreviewPath": "/AIInterview/aiinterview/src/main/resources/static/index.html"
 }

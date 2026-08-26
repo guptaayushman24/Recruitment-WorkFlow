@@ -13,5 +13,8 @@ public class SQLQuery {
     public static final String SAVE_USER_EMBEDDING = "INSERT INTO recruitment_workflow.embedding (user_id,embedding,status,applied_jobs) VALUES (?,?,?,?)";
 
     public static final String SAVE_JOB_EMBEDDING =
-        "INSERT INTO recruitment_workflow.jobs (job_description, job_description_embedding) VALUES (?, ?)";
+        "INSERT INTO recruitment_workflow.jobs (job_description, job_description_embedding,job_skills,job_experience,job_components) VALUES (?, ?,?,?,?)";
+
+    public static final String UPDATE_USER_DATA =
+        "UPDATE recruitment_workflow.user_data SET skills = ?, experience = ?, project_components = ? WHERE id = ?";
 }

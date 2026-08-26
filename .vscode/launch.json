@@ -9,6 +9,16 @@
       "projectName": "extractionservice",
       "args": "",
       "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-AiinterviewApplication<aiinterview>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.example.aiinterview.AiinterviewApplication",
+      "projectName": "aiinterview",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
     }
   ]
 }

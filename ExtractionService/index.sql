@@ -8,14 +8,14 @@ CREATE TABLE recruitment_workflow.user_data (
 
 CREATE TABLE recruitment_workflow.jobs (
     id BIGSERIAL PRIMARY KEY,
-    job_description VARCHAR(255) NOT NULL,
-    job_embedding FLOAT8[] NOT NULL
+    job_description TEXT NOT NULL,
+    job_description_embedding FLOAT8[] NOT NULL
 );
 
 CREATE TABLE recruitment_workflow.embedding (
     id BIGSERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES recruitment_workflow.user_data(id),
     embedding FLOAT8[] NOT NULL,
-    status VARCHAR(255) NOT NULL DEFAULT 'pending',
-    applied_jobs INT NOT NULL REFERENCES recruitment_workflow.jobs(id)
+    status INT NOT NULL DEFAULT 11,
+    applied_jobs INT
 );
