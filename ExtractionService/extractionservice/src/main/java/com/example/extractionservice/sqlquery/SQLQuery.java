@@ -17,4 +17,7 @@ public class SQLQuery {
 
     public static final String UPDATE_USER_DATA =
         "UPDATE recruitment_workflow.user_data SET skills = ?, experience = ?, project_components = ? WHERE id = ?";
+
+    public static final String APPLY_JOB =
+        "UPDATE recruitment_workflow.embedding SET applied_jobs = ? WHERE user_id = ?";
 }

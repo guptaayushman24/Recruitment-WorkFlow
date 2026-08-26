@@ -1,5 +1,6 @@
 package com.example.extractionservice.controller;
 
+import com.example.extractionservice.repository.SaveJobEmbedding;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.extractionservice.dto.ApplyJobDTO;
 import com.example.extractionservice.dto.ResponseDTO;
 import com.example.extractionservice.model.UserData;
 import com.example.extractionservice.repository.SaveUserDetail;
@@ -25,9 +27,11 @@ import java.nio.file.Path;
 @RequiredArgsConstructor
 @Slf4j
 public class ExtractController {
+  private final SaveJobEmbedding saveJobEmbedding;
   private final ExtractionService extractionServiceImpl;
   private final SaveUserDetail saveUserDetail;
   private  final String UPLOAD_DIR = "/Users/ayushmangupta/Documents/Recruitment_WorkFlow/file";
+
   @PostMapping("/extract")
   public ResponseEntity<ResponseDTO> extractInformationFromFile (@ModelAttribute ResumeUploadRequest request) throws IOException{
     if (request.getFile().isEmpty()){
@@ -76,4 +80,12 @@ public class ExtractController {
               .body(ResponseDTO.builder().message("Job posting is successfull").build());
   }
   // // In future will put the ADMIN check also
+
+  @PostMapping("/applyjob")
+  public ResponseEntity<ResponseDTO> applyJob(@RequestBody ApplyJobDTO applyJobDTO) {
+      extractionServiceImpl.applyJob(applyJobDTO);
+
+      return ResponseEntity.ok(ResponseDTO.builder().message("Job applied successfully").build());
+  }
+  
 }
