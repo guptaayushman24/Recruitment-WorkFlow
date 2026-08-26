@@ -12,6 +12,7 @@ import com.example.extractionservice.ai.AIAssistant;
 import com.example.extractionservice.ai.AIAssistantJobDescription;
 import com.example.extractionservice.ai.ResumeExtraction;
 import com.example.extractionservice.constant.CONSTANT;
+import com.example.extractionservice.dto.ApplyJobDTO;
 import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO;
 import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO.JobDescription;
 import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO.Resume;
@@ -120,6 +121,12 @@ public class ExtractionServiceImpl implements ExtractionService{
             }
 
             return CompletableFuture.completedFuture(jobDescriptionExtraction);
+  }
+
+
+  @Override
+  public void applyJob(ApplyJobDTO applyJobDTO) {
+    saveJobEmbedding.applyJob(applyJobDTO);
   }
 
 }

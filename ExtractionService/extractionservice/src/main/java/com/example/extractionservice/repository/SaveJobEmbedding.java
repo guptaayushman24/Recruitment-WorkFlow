@@ -9,12 +9,15 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import com.example.extractionservice.dto.ApplyJobDTO;
 import com.example.extractionservice.sqlquery.SQLQuery;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Repository
 @RequiredArgsConstructor
+@Slf4j
 public class SaveJobEmbedding {
   private final JdbcTemplate jdbcTemplate;
 
@@ -34,5 +37,14 @@ public class SaveJobEmbedding {
             ps.setArray(5, connection.createArrayOf("text", jobProjectComponent.toArray(new String[0])));
             return ps;
         }, keyHolder);
+  }
+
+  public void applyJob (ApplyJobDTO applyJobDTO){
+    jdbcTemplate.update(connection -> {
+      PreparedStatement ps = connection.prepareStatement(SQLQuery.APPLY_JOB);
+      ps.setInt(1, applyJobDTO.getJobId());
+      ps.setInt(2, applyJobDTO.getUserId());
+      return ps;
+    });
   }
 }
