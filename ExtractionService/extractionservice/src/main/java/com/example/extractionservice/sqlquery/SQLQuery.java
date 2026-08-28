@@ -20,4 +20,25 @@ public class SQLQuery {
 
     public static final String APPLY_JOB =
         "UPDATE recruitment_workflow.embedding SET applied_jobs = ? WHERE user_id = ?";
+
+    public static final String FIND_MATCH_USER_JOB_DESCRIPTION =
+        "SELECT " +
+        "e.id AS embedding_id, " +
+        "e.user_id, " +
+        "e.applied_jobs, " +
+        "e.embedding, " +
+        "u.skills, " +
+        "u.experience, " +
+        "u.project_components, " +
+        "j.job_skills, " +
+        "j.job_experience, " +
+        "j.job_components, " +
+        "j.job_description_embedding " +
+        "FROM recruitment_workflow.embedding e " +
+        "JOIN recruitment_workflow.user_data u ON e.user_id = u.id " +
+        "JOIN recruitment_workflow.jobs j ON e.applied_jobs = j.id " +
+        "WHERE e.status = '1'";
+
+        public static final String UPDATE_EMBEDDING_STATUS =
+            "UPDATE recruitment_workflow.embedding SET status = ? WHERE user_id = ? AND applied_jobs = ?";
 }

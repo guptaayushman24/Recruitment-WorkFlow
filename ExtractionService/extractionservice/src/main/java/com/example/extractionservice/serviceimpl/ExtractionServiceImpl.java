@@ -1,11 +1,14 @@
 package com.example.extractionservice.serviceimpl;
 
+import java.io.UncheckedIOException;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.example.extractionservice.ai.AIAssistant;
@@ -14,16 +17,24 @@ import com.example.extractionservice.ai.ResumeExtraction;
 import com.example.extractionservice.constant.CONSTANT;
 import com.example.extractionservice.dto.ApplyJobDTO;
 import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO;
+import com.example.extractionservice.dto.ResumeJobMatchDTO;
 import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO.JobDescription;
 import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO.Resume;
 import com.example.extractionservice.repository.SaveJobEmbedding;
 import com.example.extractionservice.repository.SaveUserDetail;
 import com.example.extractionservice.repository.SaveUserEmbedding;
 import com.example.extractionservice.service.ExtractionService;
+import com.example.extractionservice.service.PublisherService;
+import com.example.extractionservice.sqlquery.SQLQuery;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 // import com.google.cloud.spring.pubsub.core.PubSubTemplate;
+import com.google.protobuf.ByteString;
+import com.google.pubsub.v1.PubsubMessage;
 
+import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.store.embedding.CosineSimilarity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,6 +53,7 @@ public class ExtractionServiceImpl implements ExtractionService{
   private final SaveUserEmbedding saveUserEmbedding;
   private final SaveJobEmbedding saveJobEmbedding;
   private final CONSTANT constant;
+  private final PublisherService publisherService;
 
   @Async
   @Override
@@ -127,6 +139,67 @@ public class ExtractionServiceImpl implements ExtractionService{
   @Override
   public void applyJob(ApplyJobDTO applyJobDTO) {
     saveJobEmbedding.applyJob(applyJobDTO);
+  }
+
+
+  @Override
+  // fixedRate is in milliseconds - 2 min for testing, switch to 1800000 (30 min) after testing
+ @Scheduled(fixedRate = 120000)
+  public void findMatchInUserResumeAndJobDescription() throws JsonProcessingException{
+    log.info("Helloooo :::::: scheduler");
+     ExtractionResumeJobDescriptionDTO extractionResumeJobDescriptionDTO = new ExtractionResumeJobDescriptionDTO();
+    List<ResumeJobMatchDTO> dto = saveJobEmbedding.findMatchUserResumeJobDescription();
+     // Find the cosine similarity between user embedding and job description embedding
+     for (ResumeJobMatchDTO resumeJobMatchDTO:dto){
+         float [] userEmbedding = resumeJobMatchDTO.getEmbedding();
+      float [] jobDescriptionEmbedding = resumeJobMatchDTO.getJobDescriptionEmbedding();
+
+      double similarity = CosineSimilarity.between(
+          Embedding.from(userEmbedding),
+          Embedding.from(jobDescriptionEmbedding));
+
+          log.info("Similarity is :::::: {}",similarity);
+
+      if (similarity>=constant.MATCH_CONSTANT){
+        // find the match send the details to the another servie through pub-sub
+        Resume resumeDetail = new Resume();
+        JobDescription jobDescription = new JobDescription();
+
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        resumeDetail.setExperience(resumeJobMatchDTO.getExperience());
+        resumeDetail.setSkills(resumeJobMatchDTO.getSkills());
+        resumeDetail.setProjectComponents(resumeJobMatchDTO.getProjectComponents());
+
+        jobDescription.setJobExperience(resumeJobMatchDTO.getJobExperience());
+        jobDescription.setJobExperience(resumeJobMatchDTO.getJobExperience());
+        jobDescription.setJobSkills(resumeJobMatchDTO.getJobSkills());
+
+        extractionResumeJobDescriptionDTO.setResumeExtraction(resumeDetail);
+        extractionResumeJobDescriptionDTO.setJobDescriptionExtraction(jobDescription);
+
+         byte [] jsonBytes;
+         try {
+           jsonBytes = objectMapper.writeValueAsBytes(extractionResumeJobDescriptionDTO);
+         } catch (JsonProcessingException e) {
+           throw new UncheckedIOException("Failed to serialize match payload for pub-sub", e);
+         }
+
+         ByteString data = ByteString.copyFrom(jsonBytes);
+
+         PubsubMessage pubsubMessage = PubsubMessage.newBuilder()
+        .setData(data)
+        .build();
+
+        publisherService.sendMessageToExtractionTopic(pubsubMessage);
+
+        saveJobEmbedding.userJobUpdateStatus(constant.SUCCESS, resumeJobMatchDTO.getUserId(), resumeJobMatchDTO.getAppliedJobs());
+      }
+      else{
+          saveJobEmbedding.userJobUpdateStatus(constant.REJECTED, resumeJobMatchDTO.getUserId(), resumeJobMatchDTO.getAppliedJobs());
+      }
+     }
+     
   }
 
 }

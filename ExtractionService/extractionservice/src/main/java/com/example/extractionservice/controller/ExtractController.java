@@ -16,7 +16,9 @@ import com.example.extractionservice.dto.ResponseDTO;
 import com.example.extractionservice.model.UserData;
 import com.example.extractionservice.repository.SaveUserDetail;
 import com.example.extractionservice.service.ExtractionService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -87,5 +89,13 @@ public class ExtractController {
 
       return ResponseEntity.ok(ResponseDTO.builder().message("Job applied successfully").build());
   }
+
+  @PostMapping("/similarity")
+  public ResponseEntity<ResponseDTO> postMethodName() throws JsonProcessingException{
+      //TODO: process POST request
+      extractionServiceImpl.findMatchInUserResumeAndJobDescription();
+      return ResponseEntity.ok(ResponseDTO.builder().message("Matching").build());
+  }
+  
   
 }
