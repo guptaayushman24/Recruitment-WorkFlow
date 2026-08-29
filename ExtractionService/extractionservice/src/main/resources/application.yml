@@ -16,3 +16,9 @@ spring:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
     password: root
+
+  cloud:
+    gcp:
+      pubsub:
+        emulator-host: localhost:8085
+      project-id: google-pub-sub-recruitment-workflow

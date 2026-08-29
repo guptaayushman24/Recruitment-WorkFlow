@@ -76,6 +76,7 @@ public class SaveJobEmbedding {
       dto.setSkills(toStringList(rs.getArray("skills")));
       dto.setExperience(toStringList(rs.getArray("experience")));
       dto.setProjectComponents(toStringList(rs.getArray("project_components")));
+      dto.setJobId(rs.getInt("id"));
       dto.setJobSkills(toStringList(rs.getArray("job_skills")));
       dto.setJobExperience(toStringList(rs.getArray("job_experience")));
       dto.setJobComponents(toStringList(rs.getArray("job_components")));

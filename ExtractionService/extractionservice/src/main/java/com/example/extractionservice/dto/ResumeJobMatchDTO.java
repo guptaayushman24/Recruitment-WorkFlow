@@ -12,6 +12,7 @@ import lombok.Setter;
 public class ResumeJobMatchDTO {
   private Long embeddingId;
   private Integer userId;
+  private Integer jobId;
   private Integer appliedJobs;
   private float[] embedding;
   private List<String> skills;
