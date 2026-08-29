@@ -1,5 +1,6 @@
 package com.example.extractionservice.serviceimpl;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -16,6 +17,7 @@ import com.example.extractionservice.ai.AIAssistantJobDescription;
 import com.example.extractionservice.ai.ResumeExtraction;
 import com.example.extractionservice.constant.CONSTANT;
 import com.example.extractionservice.dto.ApplyJobDTO;
+import com.example.extractionservice.dto.EmailDTO;
 import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO;
 import com.example.extractionservice.dto.ResumeJobMatchDTO;
 import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO.JobDescription;
@@ -149,6 +151,7 @@ public class ExtractionServiceImpl implements ExtractionService{
   public void findMatchInUserResumeAndJobDescription() throws JsonProcessingException{
     log.info("Helloooo :::::: scheduler");
      ExtractionResumeJobDescriptionDTO extractionResumeJobDescriptionDTO = new ExtractionResumeJobDescriptionDTO();
+     EmailDTO emailDTO = new EmailDTO();
     List<ResumeJobMatchDTO> dto = saveJobEmbedding.findMatchUserResumeJobDescription();
      // Find the cosine similarity between user embedding and job description embedding
      for (ResumeJobMatchDTO resumeJobMatchDTO:dto){
@@ -184,6 +187,10 @@ public class ExtractionServiceImpl implements ExtractionService{
         extractionResumeJobDescriptionDTO.setJobDescriptionExtraction(jobDescription);
         extractionResumeJobDescriptionDTO.setUserDetail(userDetail);
 
+        emailDTO.setUserFirstName(resumeJobMatchDTO.getUserFirstName());
+        emailDTO.setUserLastName(resumeJobMatchDTO.getUserLastName());
+        emailDTO.setUserEmailAddress(resumeJobMatchDTO.getUserEmailAddress());
+
          byte [] jsonBytes;
          try {
            jsonBytes = objectMapper.writeValueAsBytes(extractionResumeJobDescriptionDTO);
@@ -200,6 +207,20 @@ public class ExtractionServiceImpl implements ExtractionService{
         publisherService.sendMessageToExtractionTopic(pubsubMessage);
 
         saveJobEmbedding.userJobUpdateStatus(constant.SUCCESS, resumeJobMatchDTO.getUserId(), resumeJobMatchDTO.getAppliedJobs());
+
+        // Send the user name and last name to the mail service using pub sub
+        byte [] jsonEmailBytes;
+        try{
+          jsonEmailBytes = objectMapper.writeValueAsBytes(emailDTO);
+        }
+        catch(JsonProcessingException e){
+          throw new UncheckedIOException("Failed to serialize match payload for pub-sub", e);
+        }
+
+        ByteString emailData = ByteString.copyFrom(jsonEmailBytes);
+        PubsubMessage pubsubMessageEmail = PubsubMessage.newBuilder().setData(emailData).build();
+
+        publisherService.sendMessageToEmailTopic(pubsubMessageEmail);
       }
       else{
           saveJobEmbedding.userJobUpdateStatus(constant.REJECTED, resumeJobMatchDTO.getUserId(), resumeJobMatchDTO.getAppliedJobs());

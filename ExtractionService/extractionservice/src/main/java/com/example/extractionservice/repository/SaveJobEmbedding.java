@@ -76,11 +76,14 @@ public class SaveJobEmbedding {
       dto.setSkills(toStringList(rs.getArray("skills")));
       dto.setExperience(toStringList(rs.getArray("experience")));
       dto.setProjectComponents(toStringList(rs.getArray("project_components")));
-      dto.setJobId(rs.getInt("id"));
+      dto.setJobId(rs.getInt("job_id"));
       dto.setJobSkills(toStringList(rs.getArray("job_skills")));
       dto.setJobExperience(toStringList(rs.getArray("job_experience")));
       dto.setJobComponents(toStringList(rs.getArray("job_components")));
       dto.setJobDescriptionEmbedding(toFloatArray(rs.getArray("job_description_embedding")));
+      dto.setUserFirstName(rs.getString("first_name"));
+      dto.setUserLastName(rs.getString("last_name"));
+      dto.setUserEmailAddress(rs.getString("email_addresss"));
       return dto;
     });
   }
