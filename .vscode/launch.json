@@ -2,13 +2,20 @@
   "configurations": [
     {
       "type": "java",
+      "name": "MailserviceApplication",
+      "request": "launch",
+      "mainClass": "com.example.mailservice.MailserviceApplication"
+    },
+    {
+      "type": "java",
       "name": "Spring Boot-ExtractionserviceApplication<extractionservice>",
       "request": "launch",
       "cwd": "${workspaceFolder}",
       "mainClass": "com.example.extractionservice.ExtractionserviceApplication",
       "projectName": "extractionservice",
       "args": "",
-      "envFile": "${workspaceFolder}/.env"
+      "envFile": "${workspaceFolder}/.env",
+      "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=61648 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=extractionservice"
     },
     {
       "type": "java",
@@ -17,6 +24,17 @@
       "cwd": "${workspaceFolder}",
       "mainClass": "com.example.aiinterview.AiinterviewApplication",
       "projectName": "aiinterview",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env",
+      "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=61665 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=aiinterview"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-MailserviceApplication<mailservice>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.example.mailservice.MailserviceApplication",
+      "projectName": "mailservice",
       "args": "",
       "envFile": "${workspaceFolder}/.env"
     }

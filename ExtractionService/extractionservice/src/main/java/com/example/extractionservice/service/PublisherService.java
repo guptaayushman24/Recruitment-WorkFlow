@@ -23,4 +23,16 @@ public class PublisherService {
                     }
                 });
     }
+
+    public void sendMessageToEmailTopic (PubsubMessage EmailDTO){
+        pubSubTemplate.publish("user-detail-email", EmailDTO)
+        .whenComplete((messageId,throwable)->{
+            if (throwable!=null){
+                log.error("Failed to publish message to topic 'user-detail-email'", throwable);
+            }
+            else{
+                  log.info("Published message {} to topic 'user-detail-email'", messageId);
+            }
+        });
+    }
 }

@@ -30,7 +30,10 @@ public class SQLQuery {
         "u.skills, " +
         "u.experience, " +
         "u.project_components, " +
-        "j.id, "+
+        "u.first_name, "+
+        "u.last_name, "+
+        "u.email AS email_addresss, "+
+        "j.id AS job_id, "+
         "j.job_skills, " +
         "j.job_experience, " +
         "j.job_components, " +
@@ -38,7 +41,7 @@ public class SQLQuery {
         "FROM recruitment_workflow.embedding e " +
         "JOIN recruitment_workflow.user_data u ON e.user_id = u.id " +
         "JOIN recruitment_workflow.jobs j ON e.applied_jobs = j.id " +
-        "WHERE e.status = '1'";
+        "WHERE e.status = '1'";   
 
         public static final String UPDATE_EMBEDDING_STATUS =
             "UPDATE recruitment_workflow.embedding SET status = ? WHERE user_id = ? AND applied_jobs = ?";
