@@ -20,6 +20,7 @@ import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO;
 import com.example.extractionservice.dto.ResumeJobMatchDTO;
 import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO.JobDescription;
 import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO.Resume;
+import com.example.extractionservice.dto.ExtractionResumeJobDescriptionDTO.UserDetail;
 import com.example.extractionservice.repository.SaveJobEmbedding;
 import com.example.extractionservice.repository.SaveUserDetail;
 import com.example.extractionservice.repository.SaveUserEmbedding;
@@ -144,7 +145,7 @@ public class ExtractionServiceImpl implements ExtractionService{
 
   @Override
   // fixedRate is in milliseconds - 2 min for testing, switch to 1800000 (30 min) after testing
- @Scheduled(fixedRate = 120000)
+ // @Scheduled(fixedRate = 120000)
   public void findMatchInUserResumeAndJobDescription() throws JsonProcessingException{
     log.info("Helloooo :::::: scheduler");
      ExtractionResumeJobDescriptionDTO extractionResumeJobDescriptionDTO = new ExtractionResumeJobDescriptionDTO();
@@ -164,6 +165,7 @@ public class ExtractionServiceImpl implements ExtractionService{
         // find the match send the details to the another servie through pub-sub
         Resume resumeDetail = new Resume();
         JobDescription jobDescription = new JobDescription();
+        UserDetail userDetail = new UserDetail();
 
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -175,8 +177,12 @@ public class ExtractionServiceImpl implements ExtractionService{
         jobDescription.setJobExperience(resumeJobMatchDTO.getJobExperience());
         jobDescription.setJobSkills(resumeJobMatchDTO.getJobSkills());
 
+        userDetail.setUserId(resumeJobMatchDTO.getUserId());
+        userDetail.setAppliedJobId(resumeJobMatchDTO.getJobId());
+
         extractionResumeJobDescriptionDTO.setResumeExtraction(resumeDetail);
         extractionResumeJobDescriptionDTO.setJobDescriptionExtraction(jobDescription);
+        extractionResumeJobDescriptionDTO.setUserDetail(userDetail);
 
          byte [] jsonBytes;
          try {

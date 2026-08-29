@@ -2,6 +2,16 @@
 spring:
   application:
     name: aiinterview
+  cloud:
+    gcp:
+      project-id: google-pub-sub-recruitment-workflow
+      pubsub:
+        emulator-host: localhost:8085
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: root
 
 server:
   port: 8081

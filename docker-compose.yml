@@ -1,18 +1,18 @@
 services:
   pubsub-emulator:
     image: dipjyotimetia/pubsub-emulator:latest
-    container_name: pubsub-emulator
+    container_name: pubsub-emulator-recruitment-workflow
     environment:
-      - PUBSUB_PROJECT=google-pub-sub-project
-      - PUBSUB_TOPIC=test,test-dto
-      - PUBSUB_SUBSCRIPTION=test-sub,test-dto-sub
+      - PUBSUB_PROJECT=google-pub-sub-recruitment-workflow
+      - PUBSUB_TOPIC=resume-job-description-detail
+      - PUBSUB_SUBSCRIPTION=resume-job-description-detail-sub
       - PUBSUB_PORT=8085
-      - DASHBOARD_PORT=8080
+      - DASHBOARD_PORT=8084
     ports:
       - "8085:8085"  # Pub/Sub emulator
-      - "8080:8080"  # Web dashboard
+      - "8084:8084"  # Web dashboard
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8084/api/health"]
       interval: 10s
       timeout: 5s
       retries: 3

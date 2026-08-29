@@ -30,6 +30,7 @@ public class SQLQuery {
         "u.skills, " +
         "u.experience, " +
         "u.project_components, " +
+        "j.id, "+
         "j.job_skills, " +
         "j.job_experience, " +
         "j.job_components, " +

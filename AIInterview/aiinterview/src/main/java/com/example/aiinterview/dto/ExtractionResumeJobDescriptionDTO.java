@@ -1,4 +1,4 @@
-package com.example.extractionservice.dto;
+package com.example.aiinterview.dto;
 
 import java.util.List;
 
