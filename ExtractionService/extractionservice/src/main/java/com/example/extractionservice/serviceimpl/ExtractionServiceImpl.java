@@ -1,6 +1,5 @@
 package com.example.extractionservice.serviceimpl;
 
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -9,7 +8,6 @@ import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.example.extractionservice.ai.AIAssistant;
@@ -28,7 +26,6 @@ import com.example.extractionservice.repository.SaveUserDetail;
 import com.example.extractionservice.repository.SaveUserEmbedding;
 import com.example.extractionservice.service.ExtractionService;
 import com.example.extractionservice.service.PublisherService;
-import com.example.extractionservice.sqlquery.SQLQuery;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 // import com.google.cloud.spring.pubsub.core.PubSubTemplate;

@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import com.example.aiinterview.dto.ExtractionResumeJobDescriptionDTO;
 import com.example.aiinterview.dto.InterviewQuestionsRecord;
 import com.example.aiinterview.repository.SaveQuestionRepository;
+import com.example.aiinterview.serviceimpl.LinkActivationServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 import com.google.cloud.spring.pubsub.support.BasicAcknowledgeablePubsubMessage;
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SubScriberService {
   private final PubSubTemplate pubSubTemplate;
   private final CreateInterviewService createInterviewService;
+  private final LinkActivationServiceImpl linkActivationServiceImpl;
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final SaveQuestionRepository saveQuestionRepository;
   @PostConstruct
@@ -44,10 +46,18 @@ public class SubScriberService {
 
       basicAcknowledgeablePubsubMessage.ack();
 
-      saveQuestionRepository.generateQuestions(
+      Integer isInterviewQuestionGenerated = saveQuestionRepository.generateQuestions(
           interviewQuestions.getUserId(),
           interviewQuestions.getAppliedJobId(),
           interviewQuestions.getQuestions());
+
+     if (isInterviewQuestionGenerated==1){
+        // Call the method to generate the link and save in the database
+        // send the userid in the below function 
+        // in token send the job_id also to correctly give the interview questions
+        String userEmailAddress = saveQuestionRepository.userEmailAddress(interviewQuestions.getUserId());
+        linkActivationServiceImpl.createAndSendSecureLink(interviewQuestions.getUserId(),interviewQuestions.getAppliedJobId(),userEmailAddress);
+     }
     }
     catch (Exception e){
       log.error(e.getMessage(),"Something went wrong");
