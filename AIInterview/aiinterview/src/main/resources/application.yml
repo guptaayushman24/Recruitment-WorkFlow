@@ -12,6 +12,23 @@ spring:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
     password: root
+    hikari:
+      # Default is 10; increase this based on your concurrent subscriber threads
+      maximum-pool-size: 30
+      # Give threads more time to wait before crashing
+      connection-timeout: 45000
+      # Ping idle pooled connections periodically so a connection that went
+      # stale while a message sat waiting on the slow AI call is refreshed
+      # before use instead of failing on checkout
+      keepalive-time: 30000
+      # Recycle connections before they can go stale/be dropped by the DB or network
+      max-lifetime: 1800000
+      validation-timeout: 5000
 
 server:
   port: 8081
+
+logging:
+  level:
+    com.google.cloud.pubsub.v1.StreamingSubscriberConnection: ERROR
+  

@@ -19,3 +19,18 @@ CREATE TABLE recruitment_workflow.embedding (
     status INT NOT NULL DEFAULT 11,
     applied_jobs INT
 );
+
+
+CREATE TABLE recruitment_workflow.user_link (
+    id BIGSERIAL PRIMARY KEY,
+    token TEXT NOT NULL UNIQUE,
+    store_data TEXT,
+    expiry_date TIMESTAMP NOT NULL,
+    link TEXT NOT NULL
+);
+
+ALTER TABLE recruitment_workflow.user_link
+    ADD COLUMN status INT;
+
+ALTER TABLE recruitment_workflow.user_link DROP COLUMN token;
+ALTER TABLE recruitment_workflow.user_link ADD COLUMN token VARCHAR(255);
