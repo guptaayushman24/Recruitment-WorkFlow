@@ -16,7 +16,7 @@ import tools.jackson.databind.ObjectMapper;
 @RequiredArgsConstructor
 @Slf4j
 public class SubScriberServiceImpl {
-  private final EmailServiceImpl emailServiceImpl;
+  // private final EmailServiceImpl emailServiceImpl;
   private final PubSubTemplate pubSubTemplate;
   private final EmailService emailService;
   private final ObjectMapper objectMapper = new ObjectMapper();

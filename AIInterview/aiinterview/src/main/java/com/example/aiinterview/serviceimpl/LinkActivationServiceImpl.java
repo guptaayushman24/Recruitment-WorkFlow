@@ -38,8 +38,7 @@ public class LinkActivationServiceImpl implements LinkActivationService{
       return;
     }
 
-    //String token = UUID.randomUUID().toString();
-    String token = userId+"?"+appliedJobId;
+    String token = UUID.randomUUID().toString();
     SecureLinkToken secureToken = new SecureLinkToken();
     secureToken.setToken(token);
     secureToken.setStoredInformation(storedInformation);
