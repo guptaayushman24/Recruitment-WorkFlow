@@ -14,4 +14,6 @@ public class SQL {
   public static String IS_ACTIVATION_LINK_SEND_TO_USER = "SELECT status FROM recruitment_workflow.user_link WHERE user_id = ? and applied_job_id = ?";
 
   public static String UPDATE_ACTIVATION_LINK_OF_USER = "UPDATE recruitment_workflow.user_link SET status = ? WHERE user_id = ? AND applied_job_id = ?"; 
+
+  public static String FETCH_STATUS_EXPIRY_DATE = "SELECT expiry_date,status FROM recruitment_workflow.user_link where token = ?";
 }
