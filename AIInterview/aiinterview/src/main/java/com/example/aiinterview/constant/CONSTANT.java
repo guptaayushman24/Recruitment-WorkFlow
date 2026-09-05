@@ -6,4 +6,5 @@ import org.springframework.stereotype.Component;
 public class CONSTANT {
   public Integer PENDING = 1;
   public Integer SUCCESSS = 2;
+  public Integer USED = 3;
 }

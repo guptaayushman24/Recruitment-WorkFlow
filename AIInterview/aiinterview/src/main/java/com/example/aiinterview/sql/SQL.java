@@ -16,4 +16,10 @@ public class SQL {
   public static String UPDATE_ACTIVATION_LINK_OF_USER = "UPDATE recruitment_workflow.user_link SET status = ? WHERE user_id = ? AND applied_job_id = ?"; 
 
   public static String FETCH_STATUS_EXPIRY_DATE = "SELECT expiry_date,status FROM recruitment_workflow.user_link where token = ?";
+
+  public static String UPDATE_USER_STATUS_IN_USER_LINK = "UPDATE recruitment_workflow.user_link SET status = ? WHERE token = ?";
+
+  public static String FETCH_USER_ID_APPLIED_JOB_ID = "SELECT user_id,applied_job_id FROM recruitment_workflow.user_link WHERE token = ?";
+
+  public static String FETCH_USER_INTERVIEW_QUESTIONS = "SELECT questions FROM recruitment_workflow.user_question WHERE user_id = ? AND job_id = ?";
 }
