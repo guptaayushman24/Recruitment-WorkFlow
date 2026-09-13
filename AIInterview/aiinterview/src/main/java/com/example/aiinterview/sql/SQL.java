@@ -22,4 +22,10 @@ public class SQL {
   public static String FETCH_USER_ID_APPLIED_JOB_ID = "SELECT user_id,applied_job_id FROM recruitment_workflow.user_link WHERE token = ?";
 
   public static String FETCH_USER_INTERVIEW_QUESTIONS = "SELECT questions FROM recruitment_workflow.user_question WHERE user_id = ? AND job_id = ?";
+
+  public static String INSERT_USER_RESPONSE = "INSERT INTO recruitment_workflow.user_question_response (user_id, applied_job_id, question, response, status) VALUES (?, ?, ?, ?, ?)";
+
+  public static String UPDATE_USER_QUESTION_RESPONSE_STATUS = "UPDATE recruitment_workflow.user_question_response SET status = ? WHERE user_id = ? AND applied_job_id = ?";
+
+  public static String FETCH_JOB_DESCRIPTION = "SELECT job_description FROM recruitment_workflow.jobs WHERE id = ?";
 }

@@ -1,5 +1,7 @@
 package com.example.aiinterview.serviceimpl;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -10,10 +12,16 @@ import com.example.aiinterview.constant.CONSTANT;
 import com.example.aiinterview.dto.TokenStatusExpiryDTO;
 import com.example.aiinterview.dto.UserAIChatRequestDTO;
 import com.example.aiinterview.dto.UserIdAppliedJobId;
+import com.example.aiinterview.repository.SaveQuestionRepository;
 import com.example.aiinterview.repository.StartInterviewRepository;
 import com.example.aiinterview.repository.ValidateLinkRepository;
 import com.example.aiinterview.service.InterviewSessionStore;
 import com.example.aiinterview.service.StartInterviewService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.cloud.spring.pubsub.core.PubSubTemplate;
+import com.google.protobuf.ByteString;
+import com.google.pubsub.v1.PubsubMessage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,13 +32,17 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 @Service
 @RequiredArgsConstructor
 public class StartInterviewServiceImpl implements StartInterviewService{
+  private final PubliserService publiserService;
   private final ValidateLinkRepository validateLinkRepository;
   private final StartInterviewRepository startInterviewRepository;
   private final SimpMessagingTemplate simpMessagingTemplate;
   private final InterviewSessionStore interviewSessionStore;
+  private final SaveQuestionRepository saveQuestionRepository;
   private final CONSTANT constant;
+  private final PubSubTemplate pubSubTemplate;
+
   @Override
-  public Integer startInterview(String token) {
+  public Integer startInterview(String token) throws IOException{
     TokenStatusExpiryDTO tokenStatusExpiryDTO =  validateLinkRepository.fetchStatusAndExpiryDate(token);
     if (tokenStatusExpiryDTO.getStatus().equals(constant.SUCCESSS) && tokenStatusExpiryDTO.getExpiryDate().isAfter(LocalDateTime.now())){
       // Link is valid and user is clicking the start button for the first time
@@ -53,12 +65,18 @@ public class StartInterviewServiceImpl implements StartInterviewService{
   public void initiatigInterview(UserAIChatRequestDTO userAIChatRequestDTO, Principal principal) {
     // principal.getName() = the interview token, resolved from the "userId"
     // query param on the WebSocket handshake (see WebSocketConfiguration)
+    boolean isJobDescriptionFetched = false; 
     String token = principal.getName();
-
+    UserAIChatRequestDTO userResponse = new UserAIChatRequestDTO();
+    ObjectMapper objectMapper = new ObjectMapper();
     if (!interviewSessionStore.exists(token)) {
-      // First message on this token: kick off the interview
-      InterviewSessionStore.Session session = interviewSessionStore.start(token, fetchInterviewQuestions(token));
-      sendQuestion(token, session.currentQuestion());
+      // First message on this token: resolve the real user/job ids once and kick off the interview
+      UserIdAppliedJobId userIdAppliedJobId = startInterviewRepository.fetchUserIdAndAppliedJobId(token);
+      List<String> questions = startInterviewRepository.fetchUserInterviewQuestions(userIdAppliedJobId.getUserId(), userIdAppliedJobId.getAppliedJobId());
+      String jobDescription = startInterviewRepository.fetchJobDescription(userIdAppliedJobId.getAppliedJobId());
+      userAIChatRequestDTO.setJobDescription(jobDescription);
+      InterviewSessionStore.Session session = interviewSessionStore.start(token, userIdAppliedJobId.getUserId(), userIdAppliedJobId.getAppliedJobId(), questions);
+      sendQuestion(token, session.getUserId(), session.currentQuestion());
       return;
     }
 
@@ -66,27 +84,63 @@ public class StartInterviewServiceImpl implements StartInterviewService{
     InterviewSessionStore.Session session = interviewSessionStore.get(token);
     // TODO: persist/evaluate userAIChatRequestDTO.getContent() as the answer to session.currentQuestion()
     log.info("Candiate answer is :::::: {}",userAIChatRequestDTO.getContent());
+    log.info("Candidate user id is :::::: {}",session.getUserId());
+    log.info("Candidate applied job id is ::::::: {}",session.getAppliedJobId());
+    log.info("Job Description according to job id is ::::::::: {}",userAIChatRequestDTO.getJobDescription());
+
+    // Save all the above fields which we are logging into the database
+    Integer rowsInserted = saveQuestionRepository.saveUserResponse(session.getUserId(), session.getAppliedJobId(), session.currentQuestion(),userAIChatRequestDTO.getContent(), constant.PENDING);
+
     session.advance();
-    // Send the candidate answer to the Evalutation Service
+
+    if (rowsInserted != null && rowsInserted == 1) {
+      // Send the candidate answer to the Evalutation Service
+      byte [] jsonBytes;
+      try{
+        userResponse.setContent(userAIChatRequestDTO.getContent());
+        userResponse.setQuestion(session.currentQuestion());
+        userResponse.setUserId(session.getUserId());
+        userResponse.setUserIdAppledJobId(session.getAppliedJobId());
+        userResponse.setLocalDateTime(null);
+
+        jsonBytes = objectMapper.writeValueAsBytes(userResponse);
+      }
+      catch(JsonProcessingException e){
+         throw new UncheckedIOException("Failed to serialize match payload for pub-sub", e);
+      }
+
+      ByteString data = ByteString.copyFrom(jsonBytes);
+      PubsubMessage pubsubMessage = PubsubMessage.newBuilder()
+        .setData(data)
+        .build();
+
+      publiserService.sendMessageToInterviewEvaluationTopic(pubsubMessage);
+      // Flip the row(s) for this user+job so tomorrow's cleanup scheduler can pick them up
+      saveQuestionRepository.updateUserQuestionResponseStatus(constant.SUCCESSS, session.getUserId(), session.getAppliedJobId());
+    } else {
+      log.error("Insertion failed in the table user_question_response for userId={}, appliedJobId={}", session.getUserId(), session.getAppliedJobId());
+    }
 
     if (session.hasNext()) {
-      sendQuestion(token, session.currentQuestion());
+      sendQuestion(token, session.getUserId(), session.currentQuestion());
     } else {
       interviewSessionStore.end(token);
-      sendMessage(token, "Interview complete. Thank you.");
+      sendMessage(token, session.getUserId(), "Interview complete. Thank you.");
     }
   }
 
-  private void sendQuestion(String token, String question) {
-    sendMessage(token, question);
+  private void sendQuestion(String token, Integer userId, String question) {
+    sendMessage(token, userId, question);
   }
 
-  private void sendMessage(String token, String content) {
+  private void sendMessage(String token, Integer userId, String content) {
     UserAIChatRequestDTO message = new UserAIChatRequestDTO();
-    message.setUserId(token);
+    message.setUserId(userId);
     message.setContent(content);
     message.setLocalDateTime(LocalDateTime.now());
-    // deliver ONLY to this candidate's private queue
+    // "token" (not userId) is the STOMP principal name resolved at handshake -
+    // that's what convertAndSendToUser must route on, regardless of what the
+    // DTO body itself carries
     simpMessagingTemplate.convertAndSendToUser(token, "/queue/messages", message);
   }
   

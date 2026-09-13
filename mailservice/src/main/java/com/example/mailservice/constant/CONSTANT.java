@@ -7,4 +7,6 @@ public class CONSTANT {
 
   public static String MAIL_SUBJECT_INTERVIEW_LINK = "LINK for the Interview";
   public static String MAIL_BODY_INTERVIEW_LINK = "Please find your interview link below. This link will expire in 5 days.";
+
+  public static String MAIL_SUBJECT_USER_INTERVIEW_SCORE = "INTERVIEW SCORE";
 }

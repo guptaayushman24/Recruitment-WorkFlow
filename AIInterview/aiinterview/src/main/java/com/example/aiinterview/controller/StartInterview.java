@@ -9,6 +9,7 @@ import com.example.aiinterview.serviceimpl.StartInterviewServiceImpl;
 
 import lombok.RequiredArgsConstructor;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class StartInterview {
   private final StartInterviewServiceImpl startInterviewServiceImpl;
   @PostMapping("/startInterview")
-  public UserValidatedResponseDTO postMethodName(@RequestBody StartInterviewRequestDTO startInterviewRequestDTO) {
+  public UserValidatedResponseDTO postMethodName(@RequestBody StartInterviewRequestDTO startInterviewRequestDTO) throws IOException{
     UserValidatedResponseDTO userValidatedResponseDTO = new UserValidatedResponseDTO();
 
     Integer userValidatedForStartingInterview = startInterviewServiceImpl.startInterview(startInterviewRequestDTO.getToken());

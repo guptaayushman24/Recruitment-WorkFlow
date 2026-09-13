@@ -4,8 +4,8 @@ services:
     container_name: pubsub-emulator-recruitment-workflow
     environment:
       - PUBSUB_PROJECT=google-pub-sub-recruitment-workflow
-      - PUBSUB_TOPIC=resume-job-description-detail,user-detail-email,user-interview-activation
-      - PUBSUB_SUBSCRIPTION=resume-job-description-detail-sub,user-detail-email-sub,user-interview-activation-sub
+      - PUBSUB_TOPIC=resume-job-description-detail,user-detail-email,user-interview-activation,user-question-response
+      - PUBSUB_SUBSCRIPTION=resume-job-description-detail-sub,user-detail-email-sub,user-interview-activation-sub,user-question-response-sub
       - PUBSUB_PORT=8085
       - DASHBOARD_PORT=8084
     ports:
@@ -13,6 +13,17 @@ services:
       - "8084:8084"  # Web dashboard
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8084/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-recruitment-workflow
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3

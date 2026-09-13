@@ -43,4 +43,8 @@ public class StartInterviewRepository {
     return userInterviewQuestions;
   }
 
+  public String fetchJobDescription (Integer appliedJobId){
+    return jdbcTemplate.queryForObject(SQL.FETCH_JOB_DESCRIPTION, String.class, appliedJobId);
+  }
+
 }

@@ -39,7 +39,7 @@ public class SaveJobEmbedding {
   private final JdbcTemplate jdbcTemplate;
   private final CONSTANT constant;
 
-  public void saveJobEmbedding (String jobDescription,float [] embeeding,List<String> jobSkills,List<String> jobExperience,List<String> jobProjectComponent){
+  public void saveJobEmbedding (String jobDescription,float [] embeeding,List<String> jobSkills,List<String> jobExperience,List<String> jobProjectComponent,String jobTitle){
     KeyHolder keyHolder = new GeneratedKeyHolder();
     Double[] boxedEmbedding = new Double[embeeding.length];
     for (int i = 0; i < embeeding.length; i++) {
@@ -53,6 +53,7 @@ public class SaveJobEmbedding {
             ps.setArray(3,connection.createArrayOf("text", jobSkills.toArray(new String[0])));
             ps.setArray(4,connection.createArrayOf("text", jobExperience.toArray(new String[0])));
             ps.setArray(5, connection.createArrayOf("text", jobProjectComponent.toArray(new String[0])));
+            ps.setString(6, jobTitle);
             return ps;
         }, keyHolder);
   }

@@ -129,7 +129,7 @@ public class ExtractionServiceImpl implements ExtractionService{
             if (weightedEmbeddingJobDescription.length>0){
               // Save Job Embedding Here
               // Add the job_skills,job_experience and job_project_component
-              saveJobEmbedding.saveJobEmbedding(jobDescription, weightedEmbeddingJobDescription,jobDescriptionExtraction.getSkills(),jobDescriptionExtraction.getExperience(),jobDescriptionExtraction.getProjectComponents());
+              saveJobEmbedding.saveJobEmbedding(jobDescription, weightedEmbeddingJobDescription,jobDescriptionExtraction.getSkills(),jobDescriptionExtraction.getExperience(),jobDescriptionExtraction.getProjectComponents(),jobDescriptionExtraction.getJobTitle());
             }
 
             return CompletableFuture.completedFuture(jobDescriptionExtraction);

@@ -34,3 +34,22 @@ ALTER TABLE recruitment_workflow.user_link
 
 ALTER TABLE recruitment_workflow.user_link DROP COLUMN token;
 ALTER TABLE recruitment_workflow.user_link ADD COLUMN token VARCHAR(255);
+
+CREATE TABLE recruitment_workflow.user_question_response (
+    id BIGSERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES recruitment_workflow.user_data(id),
+    applied_job_id INT NOT NULL REFERENCES recruitment_workflow.jobs(id),
+    question TEXT[] NOT NULL,
+    response TEXT[] NOT NULL,
+    status INT NOT NULL DEFAULT 1
+);
+
+ALTER TABLE recruitment_workflow.jobs ADD COLUMN job_title VARCHAR(255);
+
+CREATE TABLE recruitment_workflow.user_interview_score (
+    id BIGSERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES recruitment_workflow.user_data(id),
+    job_id INT NOT NULL REFERENCES recruitment_workflow.jobs(id),
+    score DOUBLE PRECISION NOT NULL,
+    status INT NOT NULL DEFAULT 1
+);

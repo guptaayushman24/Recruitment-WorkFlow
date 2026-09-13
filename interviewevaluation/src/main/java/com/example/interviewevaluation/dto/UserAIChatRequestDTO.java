@@ -1,4 +1,4 @@
-package com.example.aiinterview.dto;
+package com.example.interviewevaluation.dto;
 
 import java.time.LocalDateTime;
 
