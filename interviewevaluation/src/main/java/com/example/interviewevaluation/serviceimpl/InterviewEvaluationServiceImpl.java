@@ -11,6 +11,7 @@ import com.example.interviewevaluation.constant.Constant;
 import com.example.interviewevaluation.dto.UserInterviewReport;
 import com.example.interviewevaluation.repostiroty.StoreCandidateInterviewScoreRepository;
 import com.example.interviewevaluation.service.InterviewEvaluationService;
+import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ public class InterviewEvaluationServiceImpl implements InterviewEvaluationServic
   private final InterviewEvaluationAssistant interviewEvaluationAssistant;
   private final RedisTemplate<String, Double> redisTemplate;
   private final StoreCandidateInterviewScoreRepository storeCandidateInterviewScoreRepository;
+  private final PubSubTemplate pubSubTemplate;
   private final Constant constant;
 
   @Override
@@ -51,8 +53,25 @@ public class InterviewEvaluationServiceImpl implements InterviewEvaluationServic
   @Override
   public List<UserInterviewReport> sendInterviewScoreToUser() {
     // Iterate on the list and send call the mail service to send the mail to the user
-    List<UserInterviewReport> userInterviewReport = storeCandidateInterviewScoreRepository.fetchUserInterviewScore();
-    // Iterate here and call the mail service to send the mail to the user
-    return userInterviewReport;
+    List<UserInterviewReport> userInterviewReportList = storeCandidateInterviewScoreRepository.fetchUserInterviewScore();
+    // Send the userInterviewReportList data in the mail service
+    pubSubTemplate.publish("user-interview-evaluation", userInterviewReportList)
+    .whenComplete((messageId, throwable) -> {
+          if (throwable!=null){
+                log.error("Failed to publish message to topic 'user-detail-email'", throwable);
+            }
+            else{
+                  log.info("Published message {} to topic 'user-detail-email'", messageId);
+            }
+    });
+    
+    return userInterviewReportList;
+  }
+
+
+  @Override
+  public void sendEmailToInterviewEvaluationTopi(UserInterviewReport userInterviewReport) {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'sendEmailToInterviewEvaluationTopi'");
   }
 }

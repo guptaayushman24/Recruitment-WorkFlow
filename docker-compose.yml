@@ -4,8 +4,8 @@ services:
     container_name: pubsub-emulator-recruitment-workflow
     environment:
       - PUBSUB_PROJECT=google-pub-sub-recruitment-workflow
-      - PUBSUB_TOPIC=resume-job-description-detail,user-detail-email,user-interview-activation,user-question-response
-      - PUBSUB_SUBSCRIPTION=resume-job-description-detail-sub,user-detail-email-sub,user-interview-activation-sub,user-question-response-sub
+      - PUBSUB_TOPIC=resume-job-description-detail,user-detail-email,user-interview-activation,user-question-response,user-interview-evaluation
+      - PUBSUB_SUBSCRIPTION=resume-job-description-detail-sub,user-detail-email-sub,user-interview-activation-sub,user-question-response-sub,user-interview-evaluation-sub
       - PUBSUB_PORT=8085
       - DASHBOARD_PORT=8084
     ports:
