@@ -60,7 +60,7 @@ public class SubScriberService {
      }
     }
     catch (Exception e){
-      log.error(e.getMessage(),"Something went wrong");
+      log.error("Something went wrong processing resume-job-description-detail message", e);
     }
   }
 }

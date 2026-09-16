@@ -1,12 +1,10 @@
 package com.example.interviewevaluation.ai;
 
-import org.springframework.stereotype.Service;
 
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 
-@Service 
 public interface InterviewEvaluationAssistant {
 
     @SystemMessage("""

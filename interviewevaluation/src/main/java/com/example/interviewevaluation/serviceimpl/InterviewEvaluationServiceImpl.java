@@ -70,7 +70,7 @@ public class InterviewEvaluationServiceImpl implements InterviewEvaluationServic
 
 
   @Override
-  public void sendEmailToInterviewEvaluationTopi(UserInterviewReport userInterviewReport) {
+  public void sendEmailToInterviewEvaluationTopic(UserInterviewReport userInterviewReport) {
     // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unimplemented method 'sendEmailToInterviewEvaluationTopi'");
   }

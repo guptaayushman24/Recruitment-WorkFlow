@@ -2,8 +2,6 @@ package com.example.interviewevaluation.service;
 
 import org.springframework.stereotype.Service;
 
-import com.example.interviewevaluation.ai.AnswerEvaluation;
-import com.example.interviewevaluation.ai.InterviewEvaluationAssistant;
 import com.example.interviewevaluation.dto.UserAIChatRequestDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.spring.pubsub.core.PubSubTemplate;
@@ -18,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 public class SubscriberService {
   private final PubSubTemplate pubSubTemplate;
   private final InterviewEvaluationService interviewEvaluationService;
-  private final InterviewEvaluationAssistant interviewEvaluationAssistant;
 
 
   @PostConstruct

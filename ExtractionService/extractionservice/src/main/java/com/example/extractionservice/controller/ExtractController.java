@@ -84,7 +84,12 @@ public class ExtractController {
 
   @PostMapping("/applyjob")
   public ResponseEntity<ResponseDTO> applyJob(@RequestBody ApplyJobDTO applyJobDTO) {
-      extractionServiceImpl.applyJob(applyJobDTO);
+      int rowsUpdated = extractionServiceImpl.applyJob(applyJobDTO);
+
+      if (rowsUpdated == 0) {
+        return ResponseEntity.badRequest()
+                .body(ResponseDTO.builder().message("No resume/embedding found for this user - upload a resume before applying").build());
+      }
 
       return ResponseEntity.ok(ResponseDTO.builder().message("Job applied successfully").build());
   }

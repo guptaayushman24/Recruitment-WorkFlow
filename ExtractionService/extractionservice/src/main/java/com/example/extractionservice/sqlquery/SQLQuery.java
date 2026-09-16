@@ -10,7 +10,7 @@ public class SQLQuery {
 
     public static final String FETCH_USER_ID_FROM_EMAIL = "SELECT id FROM recruitment_workflow.user_data WHERE email = ?";
 
-    public static final String SAVE_USER_EMBEDDING = "INSERT INTO recruitment_workflow.embedding (user_id,embedding,status,applied_jobs) VALUES (?,?,?,?)";
+    public static final String SAVE_USER_EMBEDDING = "INSERT INTO recruitment_workflow.embedding (user_id,user_resume_embedding,status,applied_jobs) VALUES (?,?,?,?) ON CONFLICT (user_id) DO NOTHING";
 
     public static final String SAVE_JOB_EMBEDDING =
         "INSERT INTO recruitment_workflow.jobs (job_description, job_description_embedding,job_skills,job_experience,job_components,job_title) VALUES (?, ?,?,?,?,?)";
@@ -26,7 +26,7 @@ public class SQLQuery {
         "e.id AS embedding_id, " +
         "e.user_id, " +
         "e.applied_jobs, " +
-        "e.embedding, " +
+        "e.user_resume_embedding, " +
         "u.skills, " +
         "u.experience, " +
         "u.project_components, " +
