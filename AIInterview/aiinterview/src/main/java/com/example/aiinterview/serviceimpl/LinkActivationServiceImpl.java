@@ -51,9 +51,8 @@ public class LinkActivationServiceImpl implements LinkActivationService{
 
     // Save the whole detail in the repository
     int isLinkGenerated = saveQuestionRepository.generateUserInterViewLink(secureToken,userId,appliedJobId,constant.PENDING);
-    int isActivationLinkAlreadySendToUser = saveQuestionRepository.checkIntivitationAlreadySendToUser(userId,appliedJobId);
 
-    if (isLinkGenerated==1 && isActivationLinkAlreadySendToUser==1){
+    if (isLinkGenerated==1){
       // send the mail to the user with the link using mailservice
       // Check in the if statement before sending the message in the publisher check where the status is 1 or not
       byte [] jsonEmailActivationLinkBytes;

@@ -1,6 +1,5 @@
 package com.example.aiinterview.repository;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,7 +26,6 @@ public class SaveQuestionRepository {
     }
 
     List<String> questions = questionGeneratedByAI.stream()
-    .flatMap(s -> Arrays.stream(s.split(",")))
     .map(String::trim)
     .collect(Collectors.toList());
 
@@ -35,7 +33,7 @@ public class SaveQuestionRepository {
       return 0;
     }
 
-    for (int i = 0; i < questions.size(); i++) {
+    for (int i = 0; i < questions.size()-1; i++) {
       int rowsAffected = jdbcTemplate.update(SQL.INSERT_USER_INTERVIEW_QUESTIONS, userId, appliedJobId, i + 1, questions.get(i));
       if (rowsAffected != 1) {
         return 0;

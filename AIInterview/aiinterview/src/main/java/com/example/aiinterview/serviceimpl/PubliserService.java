@@ -25,7 +25,7 @@ public class PubliserService {
   }
 
   public void sendMessageToInterviewEvaluationTopic (PubsubMessage userResponMessage){
-    pubSubTemplate.publish("", userResponMessage)
+    pubSubTemplate.publish("user-question-response", userResponMessage)
     .whenComplete((messageId,throwable)->{
        if (throwable != null) {
                         log.error("Failed to publish message to topic 'user-question-response'", throwable);

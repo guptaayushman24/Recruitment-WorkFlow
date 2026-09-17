@@ -145,7 +145,7 @@ public class ExtractionServiceImpl implements ExtractionService{
 
   @Override
   // fixedRate is in milliseconds - 2 min for testing, switch to 1800000 (30 min) after testing
-  @Scheduled(fixedRate = 120000)
+  //@Scheduled(fixedRate = 120000)
   public void findMatchInUserResumeAndJobDescription() throws JsonProcessingException{
     log.info("Helloooo :::::: scheduler");
      ExtractionResumeJobDescriptionDTO extractionResumeJobDescriptionDTO = new ExtractionResumeJobDescriptionDTO();
@@ -192,6 +192,7 @@ public class ExtractionServiceImpl implements ExtractionService{
          byte [] jsonBytes;
          try {
            jsonBytes = objectMapper.writeValueAsBytes(extractionResumeJobDescriptionDTO);
+           log.info("Sending the details in the AIInterview Service");
          } catch (JsonProcessingException e) {
            throw new UncheckedIOException("Failed to serialize match payload for pub-sub", e);
          }

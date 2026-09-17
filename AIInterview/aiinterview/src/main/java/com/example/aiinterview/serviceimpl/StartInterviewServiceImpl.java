@@ -6,6 +6,7 @@ import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
 import com.example.aiinterview.constant.CONSTANT;
@@ -19,6 +20,7 @@ import com.example.aiinterview.service.InterviewSessionStore;
 import com.example.aiinterview.service.StartInterviewService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
@@ -41,10 +43,25 @@ public class StartInterviewServiceImpl implements StartInterviewService{
   private final CONSTANT constant;
   private final PubSubTemplate pubSubTemplate;
 
+  // startInterview result codes: 1 = started, 2 = link already used, 3 = link expired, 0 = invalid/other
   @Override
   public Integer startInterview(String token) throws IOException{
-    TokenStatusExpiryDTO tokenStatusExpiryDTO =  validateLinkRepository.fetchStatusAndExpiryDate(token);
-    if (tokenStatusExpiryDTO.getStatus().equals(constant.SUCCESSS) && tokenStatusExpiryDTO.getExpiryDate().isAfter(LocalDateTime.now())){
+    TokenStatusExpiryDTO tokenStatusExpiryDTO;
+    try {
+      tokenStatusExpiryDTO = validateLinkRepository.fetchStatusAndExpiryDate(token);
+    } catch (EmptyResultDataAccessException e) {
+      return 0;
+    }
+
+    if (tokenStatusExpiryDTO.getStatus().equals(constant.USED)){
+      return 2;
+    }
+
+    if (!tokenStatusExpiryDTO.getExpiryDate().isAfter(LocalDateTime.now())){
+      return 3;
+    }
+
+    if (tokenStatusExpiryDTO.getStatus().equals(constant.SUCCESSS)){
       // Link is valid and user is clicking the start button for the first time
       // Update the user status
       if (startInterviewRepository.startInterview(token)==1){
@@ -65,15 +82,15 @@ public class StartInterviewServiceImpl implements StartInterviewService{
   public void initiatigInterview(UserAIChatRequestDTO userAIChatRequestDTO, Principal principal) {
     // principal.getName() = the interview token, resolved from the "userId"
     // query param on the WebSocket handshake (see WebSocketConfiguration)
-    boolean isJobDescriptionFetched = false; 
     String token = principal.getName();
     UserAIChatRequestDTO userResponse = new UserAIChatRequestDTO();
-    ObjectMapper objectMapper = new ObjectMapper();
+    ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     if (!interviewSessionStore.exists(token)) {
       // First message on this token: resolve the real user/job ids once and kick off the interview
       UserIdAppliedJobId userIdAppliedJobId = startInterviewRepository.fetchUserIdAndAppliedJobId(token);
       List<String> questions = startInterviewRepository.fetchUserInterviewQuestions(userIdAppliedJobId.getUserId(), userIdAppliedJobId.getAppliedJobId());
       String jobDescription = startInterviewRepository.fetchJobDescription(userIdAppliedJobId.getAppliedJobId());
+      log.info("Job Description is :::::: {}",jobDescription);
       userAIChatRequestDTO.setJobDescription(jobDescription);
       InterviewSessionStore.Session session = interviewSessionStore.start(token, userIdAppliedJobId.getUserId(), userIdAppliedJobId.getAppliedJobId(), questions);
       sendQuestion(token, session.getUserId(), session.currentQuestion());
@@ -101,7 +118,7 @@ public class StartInterviewServiceImpl implements StartInterviewService{
         userResponse.setQuestion(session.currentQuestion());
         userResponse.setUserId(session.getUserId());
         userResponse.setUserIdAppledJobId(session.getAppliedJobId());
-        userResponse.setLocalDateTime(null);
+        userResponse.setLocalDateTime(LocalDateTime.now());
 
         jsonBytes = objectMapper.writeValueAsBytes(userResponse);
       }

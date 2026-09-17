@@ -1,5 +1,9 @@
 package com.example.aiinterview.controller;
 
+import java.net.URI;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.aiinterview.dto.APIResponseDTO;
@@ -12,12 +16,20 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
-@RequiredArgsConstructor  
+@RequiredArgsConstructor
 public class ValidateLink {
   private final ValidateLinkServiceImpl validateLinkServiceImpl;
   @GetMapping("/api/links/process")
-  public APIResponseDTO getMethodName(@RequestParam String token) {
-    return validateLinkServiceImpl.validateLink(token);
+  public ResponseEntity<Void> getMethodName(@RequestParam String token) {
+    APIResponseDTO apiResponseDTO = validateLinkServiceImpl.validateLink(token);
+
+    String redirectTarget = "Link is valid".equals(apiResponseDTO.getMessage())
+        ? "/interview.html?token=" + token
+        : "/link-expired.html";
+
+    return ResponseEntity.status(HttpStatus.FOUND)
+        .location(URI.create(redirectTarget))
+        .build();
   }
-  
+
 }

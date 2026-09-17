@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.interviewevaluation.dto.UserAIChatRequestDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 import com.google.cloud.spring.pubsub.support.BasicAcknowledgeablePubsubMessage;
 
@@ -25,7 +26,7 @@ public class SubscriberService {
 
   private void userInterviewQuestionResponses(BasicAcknowledgeablePubsubMessage basicAcknowledgeablePubsubMessage){
     try{
-      ObjectMapper objectMapper = new ObjectMapper();
+      ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
       String payload = basicAcknowledgeablePubsubMessage.getPubsubMessage().getData().toStringUtf8();
       String type = basicAcknowledgeablePubsubMessage.getPubsubMessage().getAttributesOrDefault("type", "unknown");
 
@@ -51,7 +52,7 @@ public class SubscriberService {
       
     }
     catch (Exception e){
-      log.error(e.getMessage(),"Something went wrong");
+      log.error("Something went wrong processing user-question-response message", e);
     }
 
   }
