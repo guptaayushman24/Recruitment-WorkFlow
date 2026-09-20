@@ -10,8 +10,10 @@ import lombok.Setter;
 @Getter 
 @Setter 
 public class UserAIChatRequestDTO {
-  private String userId;
-  private String userIdAppledJobId;
+  private Integer userId;
+  private Integer userIdAppledJobId;
   private String content;
+  private String question;
+  private String jobDescription;
   private LocalDateTime localDateTime;
 }

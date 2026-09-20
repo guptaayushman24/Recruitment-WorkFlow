@@ -4,6 +4,7 @@ import com.example.aiinterview.constant.CONSTANT;
 
 import java.util.List;
 
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -12,11 +13,12 @@ import com.example.aiinterview.sql.SQL;
 
 import lombok.RequiredArgsConstructor;
 
-@Repository 
-@RequiredArgsConstructor 
+@Repository
+@RequiredArgsConstructor
 public class StartInterviewRepository {
   private final CONSTANT CONSTANT;
   private final JdbcTemplate jdbcTemplate;
+  private final RedisTemplate<String, String> redisTemplate;
 
   public int startInterview (String token){
     return jdbcTemplate.update(SQL.UPDATE_USER_STATUS_IN_USER_LINK, CONSTANT.USED, token);
@@ -41,6 +43,19 @@ public class StartInterviewRepository {
       userId,appliedJobId);
 
     return userInterviewQuestions;
+  }
+
+  public String fetchJobDescription (Integer appliedJobId){
+    String cacheKey = "jobDescription:" + appliedJobId;
+
+    String cachedJobDescription = redisTemplate.opsForValue().get(cacheKey);
+    if (cachedJobDescription != null) {
+      return cachedJobDescription;
+    }
+
+    String jobDescription = jdbcTemplate.queryForObject(SQL.FETCH_JOB_DESCRIPTION, String.class, appliedJobId);
+    redisTemplate.opsForValue().set(cacheKey, jobDescription);
+    return jobDescription;
   }
 
 }

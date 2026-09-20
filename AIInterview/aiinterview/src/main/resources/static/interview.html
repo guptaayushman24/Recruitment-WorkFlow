@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Start Interview</title>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+</head>
+<body>
+  <h3>Start Interview</h3>
+
+  <input id="token" placeholder="interview token" size="40" />
+  <button id="startBtn" onclick="startInterview()">Start Interview</button>
+
+  <p id="status"></p>
+
+  <div id="qa" style="display:none">
+    <h4 id="question"></h4>
+    <input id="answer" placeholder="your answer" size="60" />
+    <button id="sendAnswer" onclick="sendAnswer()">Send</button>
+  </div>
+
+  <h4>Log</h4>
+  <ul id="log"></ul>
+
+  <script>
+    // Pre-fill the token from ?token=... if the page was opened via the emailed link
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('token')) {
+      document.getElementById('token').value = params.get('token');
+    }
+
+    let client = null;
+    let currentToken = null;
+
+    function startInterview() {
+      const token = document.getElementById('token').value.trim();
+      if (!token) {
+        alert('Enter the interview token');
+        return;
+      }
+      currentToken = token;
+
+      document.getElementById('status').textContent = 'Validating...';
+
+      fetch('/startInterview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token })
+      })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('status').textContent = data.message;
+          if (data.isUserValidated === 1) {
+            connectInterviewChannel(token);
+          }
+        })
+        .catch(err => {
+          document.getElementById('status').textContent = 'Request failed: ' + err;
+        });
+    }
+
+    function connectInterviewChannel(token) {
+      // The token doubles as the STOMP user identity - the handshake handler
+      // in WebSocketConfiguration reads it from this "userId" query param and
+      // resolves it as the Principal, which is what convertAndSendToUser(...)
+      // on the backend uses to route messages back to just this candidate.
+      client = new StompJs.Client({
+        webSocketFactory: () => new SockJS('/ws?userId=' + encodeURIComponent(token)),
+        onConnect: () => {
+          logLine('Connected');
+          client.subscribe('/user/queue/messages', (frame) => {
+            const message = JSON.parse(frame.body);
+            showQuestion(message.content);
+          });
+          // First message on this token tells the backend to start the interview
+          client.publish({
+            destination: '/app/chat',
+            body: JSON.stringify({ userId: token, content: '' })
+          });
+        }
+      });
+      client.activate();
+    }
+
+    function showQuestion(content) {
+      logLine('AI: ' + content);
+      document.getElementById('question').textContent = content;
+      document.getElementById('answer').value = '';
+      document.getElementById('qa').style.display = 'block';
+    }
+
+    function sendAnswer() {
+      const answer = document.getElementById('answer').value.trim();
+      if (!answer) {
+        return;
+      }
+      logLine('Me: ' + answer);
+      client.publish({
+        destination: '/app/chat',
+        body: JSON.stringify({ userId: currentToken, content: answer })
+      });
+      document.getElementById('answer').value = '';
+    }
+
+    function logLine(text) {
+      const li = document.createElement('li');
+      li.textContent = text;
+      document.getElementById('log').appendChild(li);
+    }
+  </script>
+</body>
+</html>

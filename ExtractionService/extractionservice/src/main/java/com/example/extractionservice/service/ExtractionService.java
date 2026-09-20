@@ -10,7 +10,7 @@ public interface ExtractionService {
    public CompletableFuture<ResumeExtraction> extractSkillProjectComponentExpierence (byte[] resumeBytes,String userEmail);
    public CompletableFuture<ResumeExtraction> extractSkillProjectComponentExpierenceFromJobDescription (String jobDescription);
 
-   public void applyJob (ApplyJobDTO applyJobDTO);
+   public int applyJob (ApplyJobDTO applyJobDTO);
 
    public void findMatchInUserResumeAndJobDescription () throws JsonProcessingException;
 }

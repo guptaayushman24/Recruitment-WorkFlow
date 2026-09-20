@@ -18,7 +18,6 @@ import com.example.extractionservice.repository.SaveUserDetail;
 import com.example.extractionservice.service.ExtractionService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -85,14 +84,18 @@ public class ExtractController {
 
   @PostMapping("/applyjob")
   public ResponseEntity<ResponseDTO> applyJob(@RequestBody ApplyJobDTO applyJobDTO) {
-      extractionServiceImpl.applyJob(applyJobDTO);
+      int rowsUpdated = extractionServiceImpl.applyJob(applyJobDTO);
+
+      if (rowsUpdated == 0) {
+        return ResponseEntity.badRequest()
+                .body(ResponseDTO.builder().message("No resume/embedding found for this user - upload a resume before applying").build());
+      }
 
       return ResponseEntity.ok(ResponseDTO.builder().message("Job applied successfully").build());
   }
 
   @PostMapping("/similarity")
   public ResponseEntity<ResponseDTO> postMethodName() throws JsonProcessingException{
-      //TODO: process POST request
       extractionServiceImpl.findMatchInUserResumeAndJobDescription();
       return ResponseEntity.ok(ResponseDTO.builder().message("Matching").build());
   }

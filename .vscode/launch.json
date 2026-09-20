@@ -37,6 +37,16 @@
       "projectName": "mailservice",
       "args": "",
       "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-InterviewevaluationApplication<interviewevaluation>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.example.interviewevaluation.InterviewevaluationApplication",
+      "projectName": "interviewevaluation",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
     }
   ]
 }

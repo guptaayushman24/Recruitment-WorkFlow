@@ -17,11 +17,29 @@ public class InterviewSessionStore {
   private final Map<String, Session> sessions = new ConcurrentHashMap<>();
 
   public static class Session {
+    private final Integer userId;
+    private final Integer appliedJobId;
+    private final String jobDescription;
     private final List<String> questions;
     private final AtomicInteger index = new AtomicInteger(0);
 
-    public Session(List<String> questions) {
+    public Session(Integer userId, Integer appliedJobId, String jobDescription, List<String> questions) {
+      this.userId = userId;
+      this.appliedJobId = appliedJobId;
+      this.jobDescription = jobDescription;
       this.questions = questions;
+    }
+
+    public Integer getUserId() {
+      return userId;
+    }
+
+    public Integer getAppliedJobId() {
+      return appliedJobId;
+    }
+
+    public String getJobDescription() {
+      return jobDescription;
     }
 
     public int currentIndex() {
@@ -45,8 +63,8 @@ public class InterviewSessionStore {
     return sessions.containsKey(token);
   }
 
-  public Session start(String token, List<String> questions) {
-    Session session = new Session(questions);
+  public Session start(String token, Integer userId, Integer appliedJobId, String jobDescription, List<String> questions) {
+    Session session = new Session(userId, appliedJobId, jobDescription, questions);
     sessions.put(token, session);
     return session;
   }

@@ -8,6 +8,7 @@ import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.example.extractionservice.ai.AIAssistant;
@@ -129,7 +130,7 @@ public class ExtractionServiceImpl implements ExtractionService{
             if (weightedEmbeddingJobDescription.length>0){
               // Save Job Embedding Here
               // Add the job_skills,job_experience and job_project_component
-              saveJobEmbedding.saveJobEmbedding(jobDescription, weightedEmbeddingJobDescription,jobDescriptionExtraction.getSkills(),jobDescriptionExtraction.getExperience(),jobDescriptionExtraction.getProjectComponents());
+              saveJobEmbedding.saveJobEmbedding(jobDescription, weightedEmbeddingJobDescription,jobDescriptionExtraction.getSkills(),jobDescriptionExtraction.getExperience(),jobDescriptionExtraction.getProjectComponents(),jobDescriptionExtraction.getJobTitle());
             }
 
             return CompletableFuture.completedFuture(jobDescriptionExtraction);
@@ -137,14 +138,14 @@ public class ExtractionServiceImpl implements ExtractionService{
 
 
   @Override
-  public void applyJob(ApplyJobDTO applyJobDTO) {
-    saveJobEmbedding.applyJob(applyJobDTO);
+  public int applyJob(ApplyJobDTO applyJobDTO) {
+    return saveJobEmbedding.applyJob(applyJobDTO);
   }
 
 
   @Override
   // fixedRate is in milliseconds - 2 min for testing, switch to 1800000 (30 min) after testing
- // @Scheduled(fixedRate = 120000)
+  //@Scheduled(fixedRate = 120000)
   public void findMatchInUserResumeAndJobDescription() throws JsonProcessingException{
     log.info("Helloooo :::::: scheduler");
      ExtractionResumeJobDescriptionDTO extractionResumeJobDescriptionDTO = new ExtractionResumeJobDescriptionDTO();
@@ -191,6 +192,7 @@ public class ExtractionServiceImpl implements ExtractionService{
          byte [] jsonBytes;
          try {
            jsonBytes = objectMapper.writeValueAsBytes(extractionResumeJobDescriptionDTO);
+           log.info("Sending the details in the AIInterview Service");
          } catch (JsonProcessingException e) {
            throw new UncheckedIOException("Failed to serialize match payload for pub-sub", e);
          }

@@ -39,7 +39,7 @@ public class SaveJobEmbedding {
   private final JdbcTemplate jdbcTemplate;
   private final CONSTANT constant;
 
-  public void saveJobEmbedding (String jobDescription,float [] embeeding,List<String> jobSkills,List<String> jobExperience,List<String> jobProjectComponent){
+  public void saveJobEmbedding (String jobDescription,float [] embeeding,List<String> jobSkills,List<String> jobExperience,List<String> jobProjectComponent,String jobTitle){
     KeyHolder keyHolder = new GeneratedKeyHolder();
     Double[] boxedEmbedding = new Double[embeeding.length];
     for (int i = 0; i < embeeding.length; i++) {
@@ -53,12 +53,13 @@ public class SaveJobEmbedding {
             ps.setArray(3,connection.createArrayOf("text", jobSkills.toArray(new String[0])));
             ps.setArray(4,connection.createArrayOf("text", jobExperience.toArray(new String[0])));
             ps.setArray(5, connection.createArrayOf("text", jobProjectComponent.toArray(new String[0])));
+            ps.setString(6, jobTitle);
             return ps;
         }, keyHolder);
   }
 
-  public void applyJob (ApplyJobDTO applyJobDTO){
-    jdbcTemplate.update(connection -> {
+  public int applyJob (ApplyJobDTO applyJobDTO){
+    return jdbcTemplate.update(connection -> {
       PreparedStatement ps = connection.prepareStatement(SQLQuery.APPLY_JOB);
       ps.setInt(1, applyJobDTO.getJobId());
       ps.setInt(2, applyJobDTO.getUserId());
@@ -72,7 +73,7 @@ public class SaveJobEmbedding {
       dto.setEmbeddingId(rs.getLong("embedding_id"));
       dto.setUserId(rs.getInt("user_id"));
       dto.setAppliedJobs(rs.getInt("applied_jobs"));
-      dto.setEmbedding(toFloatArray(rs.getArray("embedding")));
+      dto.setEmbedding(toFloatArray(rs.getArray("user_resume_embedding")));
       dto.setSkills(toStringList(rs.getArray("skills")));
       dto.setExperience(toStringList(rs.getArray("experience")));
       dto.setProjectComponents(toStringList(rs.getArray("project_components")));

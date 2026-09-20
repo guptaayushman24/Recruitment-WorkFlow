@@ -1,12 +1,12 @@
 package com.example.aiinterview.repository;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import com.example.aiinterview.constant.CONSTANT;
 import com.example.aiinterview.dto.SecureLinkToken;
 import com.example.aiinterview.sql.SQL;
 
@@ -26,7 +26,6 @@ public class SaveQuestionRepository {
     }
 
     List<String> questions = questionGeneratedByAI.stream()
-    .flatMap(s -> Arrays.stream(s.split(",")))
     .map(String::trim)
     .collect(Collectors.toList());
 
@@ -71,6 +70,20 @@ public class SaveQuestionRepository {
 
   public void updateUserActivationLink (Integer successConstant,Integer userId,Integer appliedJobId){
     jdbcTemplate.update(SQL.UPDATE_ACTIVATION_LINK_OF_USER,successConstant,userId,appliedJobId);
+  }
+
+  public Integer saveUserResponse (Integer userId,Integer appliedJobId,String question,String response,Integer status){
+    return jdbcTemplate.update(SQL.INSERT_USER_RESPONSE, ps -> {
+      ps.setInt(1, userId);
+      ps.setInt(2, appliedJobId);
+      ps.setArray(3, ps.getConnection().createArrayOf("text", new String[]{question}));
+      ps.setArray(4, ps.getConnection().createArrayOf("text", new String[]{response}));
+      ps.setInt(5, status);
+    });
+  }
+
+  public void updateUserQuestionResponseStatus (Integer status,Integer userId,Integer appliedJobId){
+    jdbcTemplate.update(SQL.UPDATE_USER_QUESTION_RESPONSE_STATUS, status, userId, appliedJobId);
   }
 
 
