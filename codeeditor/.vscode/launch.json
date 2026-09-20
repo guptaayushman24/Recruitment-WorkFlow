@@ -1,0 +1,14 @@
+{
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Spring Boot-CodeeditorApplication<codeeditor>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.example.codeeditor.CodeeditorApplication",
+      "projectName": "codeeditor",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}
