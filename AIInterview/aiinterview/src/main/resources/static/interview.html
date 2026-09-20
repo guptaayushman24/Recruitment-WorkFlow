@@ -2,26 +2,227 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Start Interview</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Interview</title>
   <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+  <style>
+    :root {
+      --bg-top: #4f46e5;
+      --bg-bottom: #7c3aed;
+      --card-bg: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
+      --me-bubble: #4f46e5;
+      --ai-bubble: #f3f4f6;
+      --success: #16a34a;
+      --error: #dc2626;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, var(--bg-top), var(--bg-bottom));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      color: var(--text);
+    }
+
+    .card {
+      width: 100%;
+      max-width: 560px;
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      padding: 32px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .header .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--bg-top), var(--bg-bottom));
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      margin: 0 0 4px;
+    }
+
+    .header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    input[type="text"], #token, #answer {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s ease;
+      width: 100%;
+    }
+
+    #token:focus, #answer:focus {
+      border-color: var(--accent);
+    }
+
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      white-space: nowrap;
+    }
+
+    button:hover { background: var(--accent-hover); }
+    button:disabled { background: #c7c7d1; cursor: not-allowed; }
+
+    #status {
+      margin-top: 14px;
+      font-size: 14px;
+      text-align: center;
+      min-height: 18px;
+    }
+    #status.success { color: var(--success); }
+    #status.error { color: var(--error); }
+
+    #qa {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    #qa h4 {
+      margin: 0 0 6px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    #question {
+      margin: 0 0 16px;
+      font-size: 16px;
+      font-weight: 600;
+      background: var(--ai-bubble);
+      padding: 14px 16px;
+      border-radius: 10px;
+      line-height: 1.5;
+    }
+
+    .answer-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .log-section {
+      margin-top: 24px;
+    }
+
+    .log-section h4 {
+      margin: 0 0 10px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    #log {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 240px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #log li {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.4;
+      max-width: 85%;
+      word-wrap: break-word;
+    }
+
+    #log li.me {
+      align-self: flex-end;
+      background: var(--me-bubble);
+      color: white;
+    }
+
+    #log li.ai, #log li.system {
+      align-self: flex-start;
+      background: var(--ai-bubble);
+      color: var(--text);
+    }
+  </style>
 </head>
 <body>
-  <h3>Start Interview</h3>
+  <div class="card">
+    <div class="header">
+      <div class="badge">🎤</div>
+      <h1>AI Interview</h1>
+      <p>Enter your interview token to begin</p>
+    </div>
 
-  <input id="token" placeholder="interview token" size="40" />
-  <button id="startBtn" onclick="startInterview()">Start Interview</button>
+    <div class="field-row">
+      <input type="text" id="token" placeholder="Interview token" />
+      <button id="startBtn" onclick="startInterview()">Start Interview</button>
+    </div>
 
-  <p id="status"></p>
+    <p id="status"></p>
 
-  <div id="qa" style="display:none">
-    <h4 id="question"></h4>
-    <input id="answer" placeholder="your answer" size="60" />
-    <button id="sendAnswer" onclick="sendAnswer()">Send</button>
+    <div id="qa" style="display:none">
+      <h4>Question</h4>
+      <p id="question"></p>
+      <div class="answer-row">
+        <input type="text" id="answer" placeholder="Type your answer..." />
+        <button id="sendAnswer" onclick="sendAnswer()">Send</button>
+      </div>
+    </div>
+
+    <div class="log-section">
+      <h4>Conversation</h4>
+      <ul id="log"></ul>
+    </div>
   </div>
-
-  <h4>Log</h4>
-  <ul id="log"></ul>
 
   <script>
     // Pre-fill the token from ?token=... if the page was opened via the emailed link
@@ -33,6 +234,12 @@
     let client = null;
     let currentToken = null;
 
+    function setStatus(text, kind) {
+      const el = document.getElementById('status');
+      el.textContent = text;
+      el.className = kind || '';
+    }
+
     function startInterview() {
       const token = document.getElementById('token').value.trim();
       if (!token) {
@@ -41,7 +248,7 @@
       }
       currentToken = token;
 
-      document.getElementById('status').textContent = 'Validating...';
+      setStatus('Validating...', '');
 
       fetch('/startInterview', {
         method: 'POST',
@@ -50,13 +257,13 @@
       })
         .then(res => res.json())
         .then(data => {
-          document.getElementById('status').textContent = data.message;
+          setStatus(data.message, data.isUserValidated === 1 ? 'success' : 'error');
           if (data.isUserValidated === 1) {
             connectInterviewChannel(token);
           }
         })
         .catch(err => {
-          document.getElementById('status').textContent = 'Request failed: ' + err;
+          setStatus('Request failed: ' + err, 'error');
         });
     }
 
@@ -68,15 +275,18 @@
       client = new StompJs.Client({
         webSocketFactory: () => new SockJS('/ws?userId=' + encodeURIComponent(token)),
         onConnect: () => {
-          logLine('Connected');
+          logLine('Connected', 'system');
           client.subscribe('/user/queue/messages', (frame) => {
             const message = JSON.parse(frame.body);
             showQuestion(message.content);
           });
-          // First message on this token tells the backend to start the interview
+          // First message on this token tells the backend to start the interview.
+          // No userId here - the backend resolves identity from the STOMP
+          // Principal (set at handshake from the ?userId= query param above),
+          // not from the message body.
           client.publish({
             destination: '/app/chat',
-            body: JSON.stringify({ userId: token, content: '' })
+            body: JSON.stringify({ content: '' })
           });
         }
       });
@@ -84,7 +294,7 @@
     }
 
     function showQuestion(content) {
-      logLine('AI: ' + content);
+      logLine('AI: ' + content, 'ai');
       document.getElementById('question').textContent = content;
       document.getElementById('answer').value = '';
       document.getElementById('qa').style.display = 'block';
@@ -95,18 +305,21 @@
       if (!answer) {
         return;
       }
-      logLine('Me: ' + answer);
+      logLine('Me: ' + answer, 'me');
       client.publish({
         destination: '/app/chat',
-        body: JSON.stringify({ userId: currentToken, content: answer })
+        body: JSON.stringify({ content: answer })
       });
       document.getElementById('answer').value = '';
     }
 
-    function logLine(text) {
+    function logLine(text, kind) {
       const li = document.createElement('li');
       li.textContent = text;
-      document.getElementById('log').appendChild(li);
+      li.className = kind || '';
+      const log = document.getElementById('log');
+      log.appendChild(li);
+      log.scrollTop = log.scrollHeight;
     }
   </script>
 </body>

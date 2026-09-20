@@ -53,3 +53,7 @@ CREATE TABLE recruitment_workflow.user_interview_score (
     score DOUBLE PRECISION NOT NULL,
     status INT NOT NULL DEFAULT 1
 );
+
+ALTER TABLE recruitment_workflow.embedding ADD CONSTRAINT embedding_user_id_unique UNIQUE (user_id);
+
+ALTER TABLE recruitment_workflow.embedding RENAME COLUMN embedding TO user_resume_embedding;
