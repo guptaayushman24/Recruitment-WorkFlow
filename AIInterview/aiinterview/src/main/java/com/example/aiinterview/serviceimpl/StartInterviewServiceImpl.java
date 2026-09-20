@@ -80,6 +80,7 @@ public class StartInterviewServiceImpl implements StartInterviewService{
   }
   @Override
   public void initiatigInterview(UserAIChatRequestDTO userAIChatRequestDTO, Principal principal) {
+    log.info("Interview Initainon process started (Generating interview question started)");
     // principal.getName() = the interview token, resolved from the "userId"
     // query param on the WebSocket handshake (see WebSocketConfiguration)
     String token = principal.getName();
@@ -90,9 +91,8 @@ public class StartInterviewServiceImpl implements StartInterviewService{
       UserIdAppliedJobId userIdAppliedJobId = startInterviewRepository.fetchUserIdAndAppliedJobId(token);
       List<String> questions = startInterviewRepository.fetchUserInterviewQuestions(userIdAppliedJobId.getUserId(), userIdAppliedJobId.getAppliedJobId());
       String jobDescription = startInterviewRepository.fetchJobDescription(userIdAppliedJobId.getAppliedJobId());
-      log.info("Job Description is :::::: {}",jobDescription);
       userAIChatRequestDTO.setJobDescription(jobDescription);
-      InterviewSessionStore.Session session = interviewSessionStore.start(token, userIdAppliedJobId.getUserId(), userIdAppliedJobId.getAppliedJobId(), questions);
+      InterviewSessionStore.Session session = interviewSessionStore.start(token, userIdAppliedJobId.getUserId(), userIdAppliedJobId.getAppliedJobId(), jobDescription,questions);
       sendQuestion(token, session.getUserId(), session.currentQuestion());
       return;
     }
@@ -103,10 +103,12 @@ public class StartInterviewServiceImpl implements StartInterviewService{
     log.info("Candiate answer is :::::: {}",userAIChatRequestDTO.getContent());
     log.info("Candidate user id is :::::: {}",session.getUserId());
     log.info("Candidate applied job id is ::::::: {}",session.getAppliedJobId());
-    log.info("Job Description according to job id is ::::::::: {}",userAIChatRequestDTO.getJobDescription());
+
+    // Capture the question being answered before advance() moves past it
+    String answeredQuestion = session.currentQuestion();
 
     // Save all the above fields which we are logging into the database
-    Integer rowsInserted = saveQuestionRepository.saveUserResponse(session.getUserId(), session.getAppliedJobId(), session.currentQuestion(),userAIChatRequestDTO.getContent(), constant.PENDING);
+    Integer rowsInserted = saveQuestionRepository.saveUserResponse(session.getUserId(), session.getAppliedJobId(), answeredQuestion,userAIChatRequestDTO.getContent(), constant.PENDING);
 
     session.advance();
 
@@ -115,10 +117,11 @@ public class StartInterviewServiceImpl implements StartInterviewService{
       byte [] jsonBytes;
       try{
         userResponse.setContent(userAIChatRequestDTO.getContent());
-        userResponse.setQuestion(session.currentQuestion());
+        userResponse.setQuestion(answeredQuestion);
         userResponse.setUserId(session.getUserId());
         userResponse.setUserIdAppledJobId(session.getAppliedJobId());
         userResponse.setLocalDateTime(LocalDateTime.now());
+        userResponse.setJobDescription(session.getJobDescription()); // Setting the job description to send the job description in user-question-response
 
         jsonBytes = objectMapper.writeValueAsBytes(userResponse);
       }

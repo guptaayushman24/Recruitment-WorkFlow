@@ -33,7 +33,7 @@ public class SaveQuestionRepository {
       return 0;
     }
 
-    for (int i = 0; i < questions.size()-1; i++) {
+    for (int i = 0; i < questions.size(); i++) {
       int rowsAffected = jdbcTemplate.update(SQL.INSERT_USER_INTERVIEW_QUESTIONS, userId, appliedJobId, i + 1, questions.get(i));
       if (rowsAffected != 1) {
         return 0;

@@ -39,12 +39,16 @@ public class SubScriberService {
       ExtractionResumeJobDescriptionDTO extractionResumeJobDescriptionDTO =
           objectMapper.readValue(payload, ExtractionResumeJobDescriptionDTO.class);
 
+      // Ack immediately after parsing, before the slow AI call - the
+      // subscription's ackDeadlineSeconds (20s) is shorter than question
+      // generation can take, so waiting until after it was causing the
+      // message to be redelivered mid-processing and race with itself.
+      basicAcknowledgeablePubsubMessage.ack();
+
       InterviewQuestionsRecord interviewQuestions =
           createInterviewService.createInterviewQuestions(extractionResumeJobDescriptionDTO);
 
       log.info("Generated interview questions :::: {}", interviewQuestions.getQuestions());
-
-      basicAcknowledgeablePubsubMessage.ack();
 
       Integer isInterviewQuestionGenerated = saveQuestionRepository.generateQuestions(
           interviewQuestions.getUserId(),

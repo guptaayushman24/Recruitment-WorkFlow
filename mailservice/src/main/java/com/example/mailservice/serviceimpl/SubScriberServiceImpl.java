@@ -44,7 +44,7 @@ public class SubScriberServiceImpl {
       emailService.sendEmailToUser(emailDTO);
 
     } catch (Exception e) {
-      log.error(e.getMessage(), "Something went wrong");
+      log.error("Something went wrong processing user-detail-email message", e);
     }
   }
 
@@ -59,7 +59,7 @@ public class SubScriberServiceImpl {
       emailService.sendInterviewActivationLinkToUser(secureLinkToken);
 
     } catch (Exception e) {
-      log.error(e.getMessage(), "Something went wrong");
+      log.error("Something went wrong processing user-interview-activation message", e);
     }
   }
 
@@ -76,7 +76,7 @@ public class SubScriberServiceImpl {
       emailService.sendUserScore(userInterviewReport);
 
     } catch (Exception e) {
-      log.error(e.getMessage(), "Something went wrong");
+      log.error("Something went wrong processing user-interview-evaluation message", e);
     }
   }
 }

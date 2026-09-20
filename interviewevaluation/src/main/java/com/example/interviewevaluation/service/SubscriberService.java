@@ -34,6 +34,14 @@ public class SubscriberService {
 
       UserAIChatRequestDTO userAIChatRequestDTO = objectMapper.readValue(payload, UserAIChatRequestDTO.class);
 
+      // Ack immediately after parsing, before the slow AI evaluation call -
+      // otherwise the ack deadline can expire mid-call and Pub/Sub redelivers
+      // the same message, racing with itself (same fix applied in aiinterview's
+      // SubScriberService). This was previously never acked at all, so every
+      // message - including ones that fail due to bad/old payload data - was
+      // being redelivered forever.
+      basicAcknowledgeablePubsubMessage.ack();
+
       log.info("Candidate answer in interview evaluation ::::: {}",userAIChatRequestDTO.getContent());
       log.info("Candidate question in interview evaluation :::::: {}",userAIChatRequestDTO.getQuestion());
       log.info("User Id in interview evaluation :::: {}",userAIChatRequestDTO.getUserId());

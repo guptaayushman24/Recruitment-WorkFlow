@@ -33,9 +33,13 @@ public class InterviewEvaluationServiceImpl implements InterviewEvaluationServic
       AnswerEvaluation candidateAnswer = interviewEvaluationAssistant.evaluateAnswer(jobDescription, question, answer);
       String compositeKey = String.format("userId:%s:appliedJobId:%s", userId, appliedJobId);
       redisTemplate.opsForValue().set(compositeKey, candidateAnswer.getScore());
+
+      log.info("Job Description in interview evaluation service at line number 37 ::::::: {}",jobDescription);
+
       return 1;
     } catch (Exception e) {
-      log.error("Some error is occured in storing the final score in the reddis");
+      log.error("Some error is occured in storing the final score in the reddis ::::::: {}",e);
+      
       return 0;
     }
   }
@@ -43,9 +47,14 @@ public class InterviewEvaluationServiceImpl implements InterviewEvaluationServic
 
   @Override
   public void saveCandidateInterviewScore(Integer userId, Integer appliedJobId) {
-    String compositeKey = String.format("userId:%s:appliedJobId:%s", userId, appliedJobId);
+   try{
+     String compositeKey = String.format("userId:%s:appliedJobId:%s", userId, appliedJobId);
     Double candidateInterviewScore = redisTemplate.opsForValue().get(compositeKey);
     storeCandidateInterviewScoreRepository.saveCandidateInterviewScore(userId,appliedJobId,candidateInterviewScore,constant.PENDING_STATUS);
+   }
+   catch (Exception e){
+    log.info("Error occured when saving final score in recruitment_workflow.user_interview_score ::::: {}",e);
+   }
     
   }
 

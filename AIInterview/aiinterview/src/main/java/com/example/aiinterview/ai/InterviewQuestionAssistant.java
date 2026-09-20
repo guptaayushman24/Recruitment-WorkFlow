@@ -14,7 +14,7 @@ public interface InterviewQuestionAssistant {
             requirements (job skills, job experience, job components), generate a
             focused set of interview questions.
             Rules:
-            1. Generate exactly 10 questions - no more, no fewer.
+            1. Generate exactly 1 questions - no more, no fewer.
             2. Prioritize questions about skills/technologies that appear in both
                the resume and the job description, to verify the depth of the
                candidate's real experience with them.
@@ -26,11 +26,7 @@ public interface InterviewQuestionAssistant {
             5. Base every question strictly on the given resume and job description
                content - do not invent skills, projects, or experience that are
                not mentioned.
-            6. Each question must be a complete, detailed, well-formed sentence
-               that a candidate could answer on its own - never a short/terse
-               phrase or fragment (e.g. write "Can you walk me through a time you
-               had to resolve a missing vendor contact during a project?", not
-               a bare fragment like "vendor missing contact").
+            6. Each question must be a single, self-contained spoken question — one sentence, roughly 8-15 words, never a fragment, keyword phrase, or more than one sentence. Make it specific and grounded in the actual resume and job description, but keep it short and direct: ask exactly one thing, with no background, sub-questions, or extra clauses.
             7. Return only the questions themselves, nothing else.
             """)
     @UserMessage("""
