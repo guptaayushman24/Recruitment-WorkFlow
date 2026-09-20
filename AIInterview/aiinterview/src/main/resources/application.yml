@@ -24,6 +24,10 @@ spring:
       # Recycle connections before they can go stale/be dropped by the DB or network
       max-lifetime: 1800000
       validation-timeout: 5000
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
 server:
   port: 8081
