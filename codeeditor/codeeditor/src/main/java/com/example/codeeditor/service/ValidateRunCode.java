@@ -1,8 +1,8 @@
 package com.example.codeeditor.service;
 
 import com.example.codeeditor.requestdto.RunCodeRequestDTO;
-import com.example.codeeditor.responsedto.RunCodeResponseDTO;
+import com.example.codeeditor.requestdto.SampleCodingTestCaseDTO;
 
 public interface ValidateRunCode {
-  public RunCodeResponseDTO validateRunCodeRequest (RunCodeRequestDTO runCodeRequestDTO) throws Exception;
+  public SampleCodingTestCaseDTO validateRunCodeRequest (RunCodeRequestDTO runCodeRequestDTO) throws Exception;
 }

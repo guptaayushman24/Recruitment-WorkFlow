@@ -5,8 +5,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 import com.example.codeeditor.requestdto.RunCodeRequestDTO;
+import com.example.codeeditor.requestdto.SampleCodingTestCaseDTO;
 import com.example.codeeditor.responsedto.CodingQuestion;
-import com.example.codeeditor.responsedto.RunCodeResponseDTO;
 import com.example.codeeditor.serviceimpl.StartCodingRoundServiceImpl;
 import com.example.codeeditor.serviceimpl.ValidateRunCodeServiceImpl;
 
@@ -27,10 +27,10 @@ public class RunCode {
   private final StartCodingRoundServiceImpl startCodingRoundServiceImpl;
 
   @PostMapping("/runcode")
-  public ResponseEntity<RunCodeResponseDTO> postMethodName(@RequestBody RunCodeRequestDTO runCodeRequestDTO) throws Exception {
-    RunCodeResponseDTO runCodeResponseDTO =   validateRunCodeServiceImpl.validateRunCodeRequest(runCodeRequestDTO);
+  public ResponseEntity<SampleCodingTestCaseDTO> postMethodName(@RequestBody RunCodeRequestDTO runCodeRequestDTO) throws Exception {
+    SampleCodingTestCaseDTO result = validateRunCodeServiceImpl.validateRunCodeRequest(runCodeRequestDTO);
       return ResponseEntity.status(200)
-       .body(runCodeResponseDTO);
+       .body(result);
   }
 
   @GetMapping(value = "/startCodingRound")

@@ -7,7 +7,6 @@ import lombok.Setter;
 @Data 
 @Getter 
 @Setter 
-public class SampleCodingTestCaseDTO extends IsMatchedDTO{
-  private Object input;
-  private Object output;
+public class IsMatchedDTO {
+  private Integer isTestCasePassedORFailed;
 }

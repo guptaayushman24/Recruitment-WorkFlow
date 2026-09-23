@@ -6,23 +6,28 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.example.codeeditor.constant.Constant;
 import com.example.codeeditor.requestdto.RunCodeRequestDTO;
-import com.example.codeeditor.responsedto.RunCodeResponseDTO;
+import com.example.codeeditor.requestdto.SampleCodingTestCaseDTO;
 import com.example.codeeditor.service.ValidateRunCode;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
-@Slf4j 
+@RequiredArgsConstructor
+@Slf4j
 public class ValidateRunCodeServiceImpl implements ValidateRunCode{
+
+  private final RedisTemplate<Object, Object> sampleTestCaseOutput;
 
   public String sourceCodeFilePath (String sourceCode,String programmingLanguage) throws IOException {
     String extension = programmingLanguage.startsWith(".") ? programmingLanguage.substring(1) : programmingLanguage;
@@ -70,23 +75,26 @@ public class ValidateRunCodeServiceImpl implements ValidateRunCode{
   }
 
   @Override
-  public RunCodeResponseDTO validateRunCodeRequest(RunCodeRequestDTO runCodeRequestDTO) throws Exception{
+  public SampleCodingTestCaseDTO validateRunCodeRequest(RunCodeRequestDTO runCodeRequestDTO) throws Exception{
     Constant constant = new Constant();
-    RunCodeResponseDTO runCodeResponseDTO = new RunCodeResponseDTO();
     HashSet<String> validProgrammingLanguage = constant.nameOfProgrammingLanguagesAllowed;
     String programmingLanguage = runCodeRequestDTO.getProgrammingLanguage();
 
     // Validate the programming language
     if (!validProgrammingLanguage.contains(programmingLanguage)){
       // Invalid programming language
-      runCodeResponseDTO.setResponse("Invalide Programming Language !!!!!");
       log.info("Invalid Programming Language :::: {}",programmingLanguage);
-      return runCodeResponseDTO;
+      SampleCodingTestCaseDTO invalidLanguageResult = new SampleCodingTestCaseDTO();
+      invalidLanguageResult.setOutput("Invalide Programming Language !!!!!");
+      invalidLanguageResult.setIsTestCasePassedORFailed(0);
+      return invalidLanguageResult;
     }
 
     if (!programmingLanguage.equals(".java") && !programmingLanguage.equals(".cpp")){
-      runCodeResponseDTO.setResponse("Execution is not supported yet for " + programmingLanguage);
-      return runCodeResponseDTO;
+      SampleCodingTestCaseDTO unsupportedLanguageResult = new SampleCodingTestCaseDTO();
+      unsupportedLanguageResult.setOutput("Execution is not supported yet for " + programmingLanguage);
+      unsupportedLanguageResult.setIsTestCasePassedORFailed(0);
+      return unsupportedLanguageResult;
     }
 
     // Write the source code to a file under generated-code/<extension>/
@@ -109,8 +117,10 @@ public class ValidateRunCodeServiceImpl implements ValidateRunCode{
     ProcessResult compileResult = runProcess(compileBuilder, null);
     if (compileResult.exitCode() != 0){
       log.info("Compilation failed :::: {}", compileResult.output());
-      runCodeResponseDTO.setResponse("Compilation failed" + " " + compileResult.output());
-      return runCodeResponseDTO;
+      SampleCodingTestCaseDTO compileFailureResult = new SampleCodingTestCaseDTO();
+      compileFailureResult.setOutput("Compilation failed" + " " + compileResult.output());
+      compileFailureResult.setIsTestCasePassedORFailed(0);
+      return compileFailureResult;
     }
 
     // Search the file in the folder generated-code/<extension> and execute the programme
@@ -122,10 +132,26 @@ public class ValidateRunCodeServiceImpl implements ValidateRunCode{
       runBuilder.command(executableBinary.toString());
     }
 
-    ProcessResult runResult = runProcess(runBuilder, runCodeRequestDTO.getProgrammingInput());
+    String programmingInput = String.valueOf(runCodeRequestDTO.getProgrammingInput());
+    ProcessResult runResult = runProcess(runBuilder, programmingInput);
     log.info("Program output :::: {}", runResult.output());
-    runCodeResponseDTO.setResponse(runResult.output());
-    return runCodeResponseDTO;
+
+    // Fetch the expected output cached in redis (StartCodingRoundServiceImpl caches it keyed by test case input)
+    Object expectedOutput = sampleTestCaseOutput.opsForValue().get(runCodeRequestDTO.getProgrammingInput());
+
+    SampleCodingTestCaseDTO result = new SampleCodingTestCaseDTO();
+    result.setInput(runCodeRequestDTO.getProgrammingInput());
+    result.setOutput(runResult.output());
+
+    if (expectedOutput == null){
+      log.info("No cached expected output found for input :::: {}", programmingInput);
+      result.setIsTestCasePassedORFailed(0);
+    } else {
+      boolean isPassed = String.valueOf(expectedOutput).trim().equals(runResult.output().trim());
+      result.setIsTestCasePassedORFailed(isPassed ? 1 : 0);
+    }
+
+    return result;
   }
 
 }

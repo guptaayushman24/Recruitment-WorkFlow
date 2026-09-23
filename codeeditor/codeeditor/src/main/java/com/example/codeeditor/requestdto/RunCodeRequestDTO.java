@@ -10,5 +10,7 @@ import lombok.Setter;
 public class RunCodeRequestDTO {
   private String programmingLanguage;
   private String sourceCode;
-  private String programmingInput;
+  //private String programmingInput;
+  private Object programmingInput;
+  private Integer id;
 }
