@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { SquareCheck, Terminal, Loader2 } from 'lucide-react';
+import { SquareCheck, Terminal, Loader2, PartyPopper } from 'lucide-react';
+import { formatTestValue } from '../utils/formatTestValue';
 
 export default function ConsolePanel({ activeTab, onTabChange, testCases, results, running }) {
   return (
@@ -61,7 +62,8 @@ function TestCases({ testCases }) {
         onSelect={setActive}
         renderLabel={(_, i) => `Case ${i + 1}`}
       />
-      <Field label="Input" value={testCases[active].input} />
+      <Field label="Input" value={formatTestValue(testCases[active].input)} />
+      <Field label="Expected Output" value={formatTestValue(testCases[active].output)} />
     </>
   );
 }
@@ -77,15 +79,21 @@ function TestResults({ results, running }) {
     );
   }
   if (!results) return <div className="empty-state">You must run your code first</div>;
+  if (!results.length) return <div className="empty-state">No test cases to run</div>;
 
   const allPassed = results.every((r) => r.passed);
   const current = results[Math.min(active, results.length - 1)];
 
   return (
     <>
-      <h3 className={`result-status ${allPassed ? 'text-green' : 'text-red'}`}>
-        {allPassed ? 'Accepted' : 'Wrong Answer'}
-      </h3>
+      {allPassed ? (
+        <div className="success-banner">
+          <PartyPopper size={20} />
+          All test cases passed! Interview complete.
+        </div>
+      ) : (
+        <h3 className="result-status text-red">Wrong Answer</h3>
+      )}
       <CaseTabs
         items={results}
         active={active}

@@ -1,19 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Play, CloudUpload, Timer, Loader2 } from 'lucide-react';
+import { Play, Timer, Loader2 } from 'lucide-react';
 
-export default function Header({ onRun, onSubmit, running }) {
+export default function Header({ onRun, running }) {
   return (
     <header className="app-header">
       <div className="brand">Coding Round</div>
 
       <div className="header-actions">
-        <button className="btn btn-secondary" onClick={onRun} disabled={running}>
+        <button className="btn" onClick={onRun} disabled={running}>
           {running ? <Loader2 size={15} className="spin" /> : <Play size={15} />}
           Run
-        </button>
-        <button className="btn btn-primary" onClick={onSubmit} disabled={running}>
-          <CloudUpload size={15} />
-          Submit
         </button>
       </div>
 

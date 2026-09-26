@@ -1,36 +1,25 @@
-import { useState } from 'react';
-import { FileText, History } from 'lucide-react';
+import { FileText, Loader2 } from 'lucide-react';
+import { formatTestValue } from '../utils/formatTestValue';
 
-const TABS = [
-  { id: 'description', label: 'Description', icon: FileText },
-  { id: 'submissions', label: 'Submissions', icon: History },
-];
-
-export default function ProblemPanel({ question, submissions }) {
-  const [activeTab, setActiveTab] = useState('description');
-
+export default function ProblemPanel({ question, error }) {
   return (
     <div className="panel">
       <div className="panel-header">
-        {TABS.map(({ id, label, icon: Icon }, i) => (
-          <div key={id} className="tab-wrap">
-            {i > 0 && <span className="tab-divider" />}
-            <button
-              className={`tab ${activeTab === id ? 'tab-active' : ''}`}
-              onClick={() => setActiveTab(id)}
-            >
-              <Icon size={15} className="tab-icon-blue" />
-              {label}
-            </button>
-          </div>
-        ))}
+        <span className="tab tab-active">
+          <FileText size={15} className="tab-icon-blue" />
+          Description
+        </span>
       </div>
 
       <div className="panel-body problem-body">
-        {activeTab === 'description' ? (
+        {error ? (
+          <div className="empty-state text-red">{error}</div>
+        ) : question ? (
           <Description question={question} />
         ) : (
-          <Submissions submissions={submissions} />
+          <div className="empty-state">
+            <Loader2 size={18} className="spin" /> Loading question...
+          </div>
         )}
       </div>
     </div>
@@ -44,60 +33,30 @@ function Description({ question }) {
         {question.id}. {question.title}
       </h1>
 
-      <div className="chips">
-        <span className={`chip difficulty-${question.difficulty?.toLowerCase()}`}>
-          {question.difficulty}
-        </span>
-      </div>
+      {question.difficulty && (
+        <div className="chips">
+          <span className={`chip difficulty-${question.difficulty.toLowerCase()}`}>
+            {question.difficulty}
+          </span>
+        </div>
+      )}
 
       <p className="problem-description">{question.codingQuestion}</p>
 
-      {question.sampleTestCases?.map((tc, i) => (
+      {question.testCases?.map((tc, i) => (
         <div key={i} className="example">
           <p className="example-title">Example {i + 1}:</p>
           <div className="example-block">
             <div>
-              <strong>Input:</strong> {tc.input}
+              <strong>Input:</strong> <span className="pre-wrap">{formatTestValue(tc.input)}</span>
             </div>
             <div>
-              <strong>Output:</strong> {tc.output}
+              <strong>Output:</strong>{' '}
+              <span className="pre-wrap">{formatTestValue(tc.output)}</span>
             </div>
-            {tc.explanation && (
-              <div>
-                <strong>Explanation:</strong> {tc.explanation}
-              </div>
-            )}
           </div>
         </div>
       ))}
     </>
-  );
-}
-
-function Submissions({ submissions }) {
-  if (submissions.length === 0) {
-    return <div className="empty-state">No submissions yet</div>;
-  }
-  return (
-    <table className="submissions-table">
-      <thead>
-        <tr>
-          <th>Status</th>
-          <th>Language</th>
-          <th>Time</th>
-        </tr>
-      </thead>
-      <tbody>
-        {submissions.map((s, i) => (
-          <tr key={i}>
-            <td className={s.passed ? 'text-green' : 'text-red'}>
-              {s.passed ? 'Accepted' : 'Wrong Answer'}
-            </td>
-            <td>{s.language}</td>
-            <td>{s.time}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
   );
 }

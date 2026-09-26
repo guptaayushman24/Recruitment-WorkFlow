@@ -1,64 +1,84 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './App.css';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import Header from './components/Header';
 import ProblemPanel from './components/ProblemPanel';
 import CodePanel from './components/CodePanel';
 import ConsolePanel from './components/ConsolePanel';
-import { DEFAULT_LANGUAGE, LANGUAGES } from './constants/languages';
-import { mockQuestion } from './data/mockQuestion';
-import { runCode } from './services/mockRunner';
+import { DEFAULT_LANGUAGE } from './constants/languages';
+import { fetchCodingQuestion } from './services/api';
+import { runTestCases } from './services/runCode';
+import { parseCompilerErrorLines, toUserCodeLines } from './utils/parseCompileErrors';
 
-const initialCode = Object.fromEntries(LANGUAGES.map((l) => [l.id, l.template]));
+// Only Java is offered right now (see constants/languages.js), so the language is fixed.
+const language = DEFAULT_LANGUAGE;
 
 export default function App() {
-  const [question] = useState(mockQuestion);
-  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
-  // Code is kept per language so switching languages doesn't lose work.
-  const [codeByLanguage, setCodeByLanguage] = useState(initialCode);
+  const [question, setQuestion] = useState(null);
+  const [questionError, setQuestionError] = useState(null);
+  // The candidate's editable Solution code. Seeded from the question's userCodingTemplate
+  // once it loads; falls back to a generic template if the backend didn't send one.
+  const [code, setCode] = useState(language.fallbackTemplate);
   const [consoleTab, setConsoleTab] = useState('testcase');
   const [results, setResults] = useState(null);
   const [running, setRunning] = useState(false);
-  const [submissions, setSubmissions] = useState([]);
+  // Line numbers (in the editable editor) to highlight red, parsed from the compiler's output.
+  const [errorLines, setErrorLines] = useState([]);
 
-  const code = codeByLanguage[language.id];
-  const setCode = (value) => setCodeByLanguage((prev) => ({ ...prev, [language.id]: value }));
+  useEffect(() => {
+    let ignore = false;
+    fetchCodingQuestion()
+      .then((q) => {
+        if (ignore) return;
+        setQuestion(q);
+        setCode(q.userCodingTemplate ?? language.fallbackTemplate);
+        setErrorLines([]);
+      })
+      .catch((err) => !ignore && setQuestionError(err.message));
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const testCases = question?.testCases ?? [];
+
+  // Editing the code invalidates any error highlights left over from the last run.
+  const updateCode = (value) => {
+    setCode(value);
+    setErrorLines([]);
+  };
 
   const execute = async () => {
     setRunning(true);
     setConsoleTab('result');
+    setErrorLines([]);
     try {
-      const res = await runCode({
-        language: language.extension,
-        sourceCode: code,
-        testCases: question.sampleTestCases,
+      const driverCode = question?.questionCodingTemplate;
+      const res = await runTestCases({
+        questionId: question?.id,
+        languageExtension: language.extension,
+        driverCode,
+        userCode: code,
+        testCases,
       });
       setResults(res);
+
+      const combinedErrorLines = res.flatMap((r) => parseCompilerErrorLines(r.actual));
+      setErrorLines(toUserCodeLines(combinedErrorLines, driverCode));
+
       return res;
     } finally {
       setRunning(false);
     }
   };
 
-  const handleSubmit = async () => {
-    const res = await execute();
-    setSubmissions((prev) => [
-      {
-        passed: res.every((r) => r.passed),
-        language: language.label,
-        time: new Date().toLocaleTimeString(),
-      },
-      ...prev,
-    ]);
-  };
-
   return (
     <div className="app">
-      <Header onRun={execute} onSubmit={handleSubmit} running={running} />
+      <Header onRun={execute} running={running} />
 
       <Group orientation="horizontal" className="workspace">
         <Panel defaultSize="42" minSize="20">
-          <ProblemPanel question={question} submissions={submissions} />
+          <ProblemPanel question={question} error={questionError} />
         </Panel>
         <Separator className="resize-handle resize-handle-vertical" />
         <Panel minSize="30">
@@ -66,10 +86,11 @@ export default function App() {
             <Panel defaultSize="60" minSize="15">
               <CodePanel
                 language={language}
-                onLanguageChange={setLanguage}
+                driverCode={question?.questionCodingTemplate}
                 code={code}
-                onCodeChange={setCode}
-                onReset={() => setCode(language.template)}
+                onCodeChange={updateCode}
+                onReset={() => updateCode(question?.userCodingTemplate ?? language.fallbackTemplate)}
+                errorLines={errorLines}
               />
             </Panel>
             <Separator className="resize-handle resize-handle-horizontal" />
@@ -77,7 +98,7 @@ export default function App() {
               <ConsolePanel
                 activeTab={consoleTab}
                 onTabChange={setConsoleTab}
-                testCases={question.sampleTestCases}
+                testCases={testCases}
                 results={results}
                 running={running}
               />

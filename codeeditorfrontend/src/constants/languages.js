@@ -1,30 +1,20 @@
 // `extension` is what the backend's POST /runcode expects in `programmingLanguage`
 // (validated against codeeditor's Constant.java). `monaco` is the editor language id.
-// Only Java and C++ are executable on the backend today.
+//
+// startCodingRound now returns a Java-specific driver/stub pair per question
+// (questionCodingTemplate / userCodingTemplate) — there's no C++ equivalent yet, so only
+// Java is offered until the backend sends a template pair for it too. `fallbackTemplate` is
+// only used if a question is loaded without those fields (e.g. an older backend response).
 export const LANGUAGES = [
   {
     id: 'java',
     label: 'Java',
     monaco: 'java',
     extension: '.java',
-    template: `public class Main {
+    fallbackTemplate: `public class Main {
     public static void main(String[] args) {
         // Read input from stdin and print the answer
     }
-}
-`,
-  },
-  {
-    id: 'cpp',
-    label: 'C++',
-    monaco: 'cpp',
-    extension: '.cpp',
-    template: `#include <bits/stdc++.h>
-using namespace std;
-
-int main() {
-    // Read input from stdin and print the answer
-    return 0;
 }
 `,
   },
