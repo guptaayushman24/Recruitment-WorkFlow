@@ -5,5 +5,5 @@ import java.util.List;
 import com.example.codeeditor.responsedto.CodingQuestion;
 
 public interface StartCodingRoundService {
-  CodingQuestion startCodingRound();
+  List<CodingQuestion> startCodingRound();
 }

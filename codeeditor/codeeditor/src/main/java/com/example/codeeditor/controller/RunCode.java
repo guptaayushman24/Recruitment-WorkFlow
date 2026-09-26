@@ -34,8 +34,8 @@ public class RunCode {
   }
 
   @GetMapping(value = "/startCodingRound")
-  public ResponseEntity<CodingQuestion> getMethodName() {
-    CodingQuestion codingQuestions = startCodingRoundServiceImpl.startCodingRound();
+  public ResponseEntity<List<CodingQuestion>> getMethodName() {
+    List<CodingQuestion> codingQuestions = startCodingRoundServiceImpl.startCodingRound();
     return ResponseEntity.status(200)
      .body(codingQuestions);
   }

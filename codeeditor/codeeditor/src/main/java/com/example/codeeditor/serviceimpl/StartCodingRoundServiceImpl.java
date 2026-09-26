@@ -12,28 +12,38 @@ import com.example.codeeditor.service.StartCodingRoundService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j 
+@Slf4j
 public class StartCodingRoundServiceImpl implements StartCodingRoundService {
 
   private final StartCodingInterviewRepository startCodingInterviewRepository;
 
   private final RedisTemplate <Object,Object> sampleTestCaseOutput;
 
+  private final ObjectMapper objectMapper;
+
   @Override
-  public CodingQuestion startCodingRound() {
+  public List<CodingQuestion> startCodingRound() {
     int min = 1;
     int max = 164;
     int customRange = min + (int) (Math.random() * ((max - min) + 1));
-    List<SampleCodingTestCaseDTO> sampleCodingTestCase = startCodingInterviewRepository.fetchCodingTestCaseInputOuput(customRange);
-    // Iterate on the list and store in the reddis (sampleTestCaseOutput)
-    for (SampleCodingTestCaseDTO sampleCodingTestCaseDTO:sampleCodingTestCase){
-      sampleTestCaseOutput.opsForValue().set(sampleCodingTestCaseDTO.getInput(), sampleCodingTestCaseDTO.getOutput());
-      Object storedValue = sampleTestCaseOutput.opsForValue().get(sampleCodingTestCaseDTO.getInput());
-      log.info("Value stored in reddis :::::::: {}", storedValue);
+
+    List<CodingQuestion> codingQuestions = startCodingInterviewRepository.fetchCodingQuestions(customRange);
+
+    // Cache the expected output of each test case of the returned question, keyed by its JSON input
+    // Check if in the reddis key is present then do not need to store in the redis
+    for (CodingQuestion codingQuestion : codingQuestions){
+      for (SampleCodingTestCaseDTO sampleCodingTestCaseDTO : codingQuestion.getTestCases()){
+        String redisKey = objectMapper.writeValueAsString(sampleCodingTestCaseDTO.getInput());
+        if (!sampleTestCaseOutput.hasKey(redisKey)){
+          sampleTestCaseOutput.opsForValue().set(redisKey, sampleCodingTestCaseDTO.getOutput());
+          log.info("Value stored in reddis :::::::: key {} value {}", redisKey, sampleCodingTestCaseDTO.getOutput());
+        }
+      }
     }
-    return startCodingInterviewRepository.fetchCodingQuestions(customRange);
+    return codingQuestions;
   }
 }

@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -21,6 +22,7 @@ import com.example.codeeditor.service.ValidateRunCode;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ValidateRunCodeServiceImpl implements ValidateRunCode{
 
   private final RedisTemplate<Object, Object> sampleTestCaseOutput;
+
+  private final ObjectMapper objectMapper;
 
   public String sourceCodeFilePath (String sourceCode,String programmingLanguage) throws IOException {
     String extension = programmingLanguage.startsWith(".") ? programmingLanguage.substring(1) : programmingLanguage;
@@ -50,6 +54,75 @@ public class ValidateRunCodeServiceImpl implements ValidateRunCode{
       }
     }
     return "Source";
+  }
+
+  private String stdinFormat(Object value) {
+    StringBuilder builder = new StringBuilder();
+    appendValue(builder, value);
+    return builder.toString();
+  }
+
+  private void appendValue(StringBuilder builder, Object value) {
+    if (value instanceof List<?> list) {
+      builder.append(list.size()).append('\n');
+      appendListBody(builder, list);
+    } else if (value instanceof Map<?, ?> map) {
+      appendMap(builder, map);
+    } else {
+      // Scalar: int, string, double, boolean
+      builder.append(String.valueOf(value)).append('\n');
+    }
+  }
+
+  private void appendListBody(StringBuilder builder, List<?> list) {
+    boolean isNestedArray = !list.isEmpty() && list.get(0) instanceof List;
+    if (isNestedArray) {
+      // 2D (or deeper) — recurse per row, each row prints its own length + elements
+      for (Object row : list) {
+        appendValue(builder, row);
+      }
+    } else {
+      // 1D — one space-separated elements line
+      String elements = list.stream()
+          .map(String::valueOf)
+          .collect(Collectors.joining(" "));
+      builder.append(elements).append('\n');
+    }
+  }
+
+  // Postgres jsonb does not preserve object key order, so a field's position in the map
+  // can't be relied on. A "<field>Len" sibling key (added by the seed data for
+  // unambiguous single string/array fields) is looked up by name instead, and its value is
+  // printed immediately before that field's content rather than trusting map iteration order.
+  private void appendMap(StringBuilder builder, Map<?, ?> map) {
+    for (Map.Entry<?, ?> entry : map.entrySet()) {
+      String key = String.valueOf(entry.getKey());
+      if (key.endsWith("Len") && isLengthCompanion(map, key)) {
+        continue; // printed alongside its paired field below, not on its own
+      }
+
+      Object fieldValue = entry.getValue();
+      Object explicitLength = (fieldValue instanceof String || fieldValue instanceof List)
+          ? map.get(key + "Len")
+          : null;
+
+      if (explicitLength != null) {
+        builder.append(String.valueOf(explicitLength)).append('\n');
+        if (fieldValue instanceof List<?> list) {
+          appendListBody(builder, list);
+        } else {
+          builder.append(String.valueOf(fieldValue)).append('\n');
+        }
+      } else {
+        appendValue(builder, fieldValue);
+      }
+    }
+  }
+
+  private boolean isLengthCompanion(Map<?, ?> map, String lengthKey) {
+    String baseKey = lengthKey.substring(0, lengthKey.length() - "Len".length());
+    Object baseValue = map.get(baseKey);
+    return baseValue instanceof String || baseValue instanceof List;
   }
 
   private record ProcessResult(int exitCode, String output) {}
@@ -132,23 +205,27 @@ public class ValidateRunCodeServiceImpl implements ValidateRunCode{
       runBuilder.command(executableBinary.toString());
     }
 
-    String programmingInput = String.valueOf(runCodeRequestDTO.getProgrammingInput());
+    String programmingInput = stdinFormat(runCodeRequestDTO.getProgrammingInput());
     ProcessResult runResult = runProcess(runBuilder, programmingInput);
     log.info("Program output :::: {}", runResult.output());
 
-    // Fetch the expected output cached in redis (StartCodingRoundServiceImpl caches it keyed by test case input)
-    Object expectedOutput = sampleTestCaseOutput.opsForValue().get(runCodeRequestDTO.getProgrammingInput());
+    // Fetch the expected output cached in redis (StartCodingRoundServiceImpl caches it keyed by a JSON-serialized test case input)
+    String redisKey = objectMapper.writeValueAsString(runCodeRequestDTO.getProgrammingInput());
+    Object expectedOutput = sampleTestCaseOutput.opsForValue().get(redisKey);
 
+    log.info("Reddis key is :::::: {}",redisKey);
     SampleCodingTestCaseDTO result = new SampleCodingTestCaseDTO();
     result.setInput(runCodeRequestDTO.getProgrammingInput());
     result.setOutput(runResult.output());
 
     if (expectedOutput == null){
-      log.info("No cached expected output found for input :::: {}", programmingInput);
+      log.info("No cached expected output found for redis key :::: {}", redisKey);
       result.setIsTestCasePassedORFailed(0);
     } else {
       boolean isPassed = String.valueOf(expectedOutput).trim().equals(runResult.output().trim());
       result.setIsTestCasePassedORFailed(isPassed ? 1 : 0);
+
+      // In future will 
     }
 
     return result;

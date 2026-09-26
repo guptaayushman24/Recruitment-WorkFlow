@@ -10,33 +10,33 @@ import com.example.codeeditor.responsedto.CodingQuestion;
 import com.example.codeeditor.sql.SQL;
 
 import lombok.RequiredArgsConstructor;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 @Repository
 @RequiredArgsConstructor
 public class StartCodingInterviewRepository {
   private final JdbcTemplate jdbcTemplate;
+  private final ObjectMapper objectMapper;
 
-  public CodingQuestion fetchCodingQuestions(Integer customRange) {
-    return jdbcTemplate.queryForObject(SQL.FETCH_CODING_QUESTIONS, (rs, rowNum) -> {
+  public List<CodingQuestion> fetchCodingQuestions(Integer customRange) {
+    return jdbcTemplate.query(SQL.FETCH_CODING_QUESTIONS, (rs, rowNum) -> {
       CodingQuestion codingQuestion = new CodingQuestion();
       codingQuestion.setId(rs.getLong("id"));
       codingQuestion.setTitle(rs.getString("question_title"));
       codingQuestion.setCodingQuestion(rs.getString("question_description"));
+      codingQuestion.setTestCases(parseTestCases(rs.getString("test_cases")));
+      codingQuestion.setQuestionCodingTemplate(rs.getString("driver_code"));
+      codingQuestion.setUserCodingTemplate(rs.getString("user_code_template"));
       return codingQuestion;
     },customRange);
   }
 
-  public Integer maxiMumQuestions (){
-    return jdbcTemplate.queryForObject(SQL.FETCH_MAXIMUM_NUMBER_OF_QUESTIONS, (rs,rowNum)-> rs.getInt(1));
+  private List<SampleCodingTestCaseDTO> parseTestCases(String testCasesJson) {
+    return objectMapper.readValue(testCasesJson, new TypeReference<List<SampleCodingTestCaseDTO>>() {});
   }
 
-  public List<SampleCodingTestCaseDTO> fetchCodingTestCaseInputOuput (Integer customRange){
-    return jdbcTemplate.query(SQL.FETCH_CODING_TEST_CASE, (rs,rowNum)->{
-      SampleCodingTestCaseDTO sampleCodingTestCaseDTO = new SampleCodingTestCaseDTO();
-      sampleCodingTestCaseDTO.setInput("input");
-      sampleCodingTestCaseDTO.setOutput("output");
-
-      return sampleCodingTestCaseDTO;
-    },customRange);
+  public Integer maxiMumQuestions (){
+    return jdbcTemplate.queryForObject(SQL.FETCH_MAXIMUM_NUMBER_OF_QUESTIONS, (rs,rowNum)-> rs.getInt(1));
   }
 }
