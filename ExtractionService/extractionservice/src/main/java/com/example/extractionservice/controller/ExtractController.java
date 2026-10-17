@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,7 +32,8 @@ public class ExtractController {
   private final SaveJobEmbedding saveJobEmbedding;
   private final ExtractionService extractionServiceImpl;
   private final SaveUserDetail saveUserDetail;
-  private  final String UPLOAD_DIR = "/Users/ayushmangupta/Documents/Recruitment_WorkFlow/file";
+  private final PasswordEncoder passwordEncoder;
+  String UPLOAD_DIR = "/Users/ayushmangupta/Documents/Recruitment_WorkFlow/file";
 
   @PostMapping("/extract")
   public ResponseEntity<ResponseDTO> extractInformationFromFile (@ModelAttribute ResumeUploadRequest request) throws IOException{
@@ -43,7 +45,7 @@ public class ExtractController {
     String fileName = request.getEmail()+" "+request.getFile().getOriginalFilename();
     Path filePath = uploadPath.resolve(fileName);
     Files.copy(request.getFile().getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
+    log.info("File Path is ::::: {}",filePath);
       String fileType = request.getFile().getContentType();
       if (!fileType.equalsIgnoreCase("application/pdf")){
          return ResponseEntity.ok(ResponseDTO.builder().message("Please upload the pdf file").build());
@@ -67,6 +69,9 @@ public class ExtractController {
         userData.setLastName(request.getLastName());
         userData.setEmail(request.getEmail());
         userData.setResumePath(filePath.toString());
+        // Enypt the password and then store in the database
+        String userHashedPassword = passwordEncoder.encode(request.getUserPassword());
+        userData.setUserPassword(userHashedPassword);
 
         saveUserDetail.saveUserDetail(userData);
       }

@@ -15,4 +15,6 @@ public class SecureLinkToken {
   private LocalDateTime expiryDate;
   private String link;
   private String emailAddress;
+  // Absent for round 1 links (aiinterview doesn't send it); 2 = coding round
+  private Integer round;
 }

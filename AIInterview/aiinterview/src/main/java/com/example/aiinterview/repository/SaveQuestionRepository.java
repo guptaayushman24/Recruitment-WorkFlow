@@ -7,7 +7,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import com.example.aiinterview.constant.CONSTANT;
+import com.example.aiinterview.dto.ExtractionResumeJobDescriptionDTO;
 import com.example.aiinterview.dto.SecureLinkToken;
+import com.example.aiinterview.dto.UserIdAppliedJobId;
 import com.example.aiinterview.sql.SQL;
 
 import lombok.RequiredArgsConstructor;
@@ -86,5 +88,42 @@ public class SaveQuestionRepository {
     jdbcTemplate.update(SQL.UPDATE_USER_QUESTION_RESPONSE_STATUS, status, userId, appliedJobId);
   }
 
+  public List<UserIdAppliedJobId> findMatchesMissingInterview (){
+    return jdbcTemplate.query(SQL.FIND_MATCHES_MISSING_INTERVIEW, (rs, rowNum) -> {
+      UserIdAppliedJobId match = new UserIdAppliedJobId();
+      match.setUserId(rs.getInt("user_id"));
+      match.setAppliedJobId(rs.getInt("applied_jobs"));
+      return match;
+    });
+  }
 
+  // Rebuilds the payload extractionservice originally published, from what it already stored
+  public ExtractionResumeJobDescriptionDTO fetchResumeAndJobDetail (Integer userId,Integer appliedJobId){
+    return jdbcTemplate.queryForObject(SQL.FETCH_RESUME_AND_JOB_DETAIL, (rs, rowNum) -> {
+      ExtractionResumeJobDescriptionDTO dto = new ExtractionResumeJobDescriptionDTO();
+
+      ExtractionResumeJobDescriptionDTO.Resume resume = new ExtractionResumeJobDescriptionDTO.Resume();
+      resume.setSkills(toStringList(rs.getArray("skills")));
+      resume.setExperience(toStringList(rs.getArray("experience")));
+      resume.setProjectComponents(toStringList(rs.getArray("project_components")));
+
+      ExtractionResumeJobDescriptionDTO.JobDescription job = new ExtractionResumeJobDescriptionDTO.JobDescription();
+      job.setJobSkills(toStringList(rs.getArray("job_skills")));
+      job.setJobExperience(toStringList(rs.getArray("job_experience")));
+      job.setJobComponents(toStringList(rs.getArray("job_components")));
+
+      ExtractionResumeJobDescriptionDTO.UserDetail userDetail = new ExtractionResumeJobDescriptionDTO.UserDetail();
+      userDetail.setUserId(userId);
+      userDetail.setAppliedJobId(appliedJobId);
+
+      dto.setResumeExtraction(resume);
+      dto.setJobDescriptionExtraction(job);
+      dto.setUserDetail(userDetail);
+      return dto;
+    }, userId, appliedJobId);
+  }
+
+  private static List<String> toStringList (java.sql.Array sqlArray) throws java.sql.SQLException {
+    return sqlArray == null ? List.of() : java.util.Arrays.asList((String[]) sqlArray.getArray());
+  }
 }

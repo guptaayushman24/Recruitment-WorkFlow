@@ -29,6 +29,7 @@ public class SaveUserDetail {
             ps.setString(2, userData.getLastName());
             ps.setString(3, userData.getEmail());
             ps.setString(4, userData.getResumePath());
+            ps.setString(5,userData.getUserPassword());
             return ps;
         }, keyHolder);
     }

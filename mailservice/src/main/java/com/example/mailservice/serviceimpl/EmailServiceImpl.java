@@ -32,13 +32,18 @@ public class EmailServiceImpl implements EmailService{
   @Override
   public void sendInterviewActivationLinkToUser(SecureLinkToken secureLinkToken){
      SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
-     String subject = CONSTANT.MAIL_SUBJECT_INTERVIEW_LINK;
+     boolean isCodingRound = secureLinkToken.getRound() != null && secureLinkToken.getRound() == CONSTANT.CODING_ROUND;
+     String subject = isCodingRound ? CONSTANT.MAIL_SUBJECT_CODING_ROUND_LINK : CONSTANT.MAIL_SUBJECT_INTERVIEW_LINK;
       String greeting = CONSTANT.GREETING;
-      String body = greeting+" "+CONSTANT.MAIL_SUBJECT_INTERVIEW_LINK+" "+secureLinkToken.getLink();
+      String body = isCodingRound
+          ? greeting+", "+CONSTANT.MAIL_BODY_CODING_ROUND_LINK+" "+secureLinkToken.getLink()
+          : greeting+" "+CONSTANT.MAIL_SUBJECT_INTERVIEW_LINK+" "+secureLinkToken.getLink();
 
     simpleMailMessage.setTo(secureLinkToken.getEmailAddress());
     simpleMailMessage.setSubject(subject);
     simpleMailMessage.setText(body);
+
+    javaMailSender.send(simpleMailMessage);
   }
   @Override
   public void sendUserScore(UserInterviewReport userInterviewReport) {
