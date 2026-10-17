@@ -13,4 +13,6 @@ public class RunCodeRequestDTO {
   //private String programmingInput;
   private Object programmingInput;
   private Integer id;
+  // Round-2 link token (?token= on the coding page); resolves to the candidate's user_id / applied_job_id
+  private String token;
 }

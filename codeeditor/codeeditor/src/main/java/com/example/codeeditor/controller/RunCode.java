@@ -7,6 +7,7 @@ import java.util.List;
 import com.example.codeeditor.requestdto.RunCodeRequestDTO;
 import com.example.codeeditor.requestdto.SampleCodingTestCaseDTO;
 import com.example.codeeditor.responsedto.CodingQuestion;
+import com.example.codeeditor.responsedto.CodingRoundLinkResponseDTO;
 import com.example.codeeditor.serviceimpl.StartCodingRoundServiceImpl;
 import com.example.codeeditor.serviceimpl.ValidateRunCodeServiceImpl;
 
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 
 
@@ -38,6 +40,11 @@ public class RunCode {
     List<CodingQuestion> codingQuestions = startCodingRoundServiceImpl.startCodingRound();
     return ResponseEntity.status(200)
      .body(codingQuestions);
+  }
+
+  @GetMapping("/validateCodingRoundLink")
+  public ResponseEntity<CodingRoundLinkResponseDTO> validateCodingRoundLink(@RequestParam(required = false) String token) {
+    return ResponseEntity.ok(startCodingRoundServiceImpl.validateCodingRoundLink(token));
   }
 
   // Apply validation on the code language  written by the user

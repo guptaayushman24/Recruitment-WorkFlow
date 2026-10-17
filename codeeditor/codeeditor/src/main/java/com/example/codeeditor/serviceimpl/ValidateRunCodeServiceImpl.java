@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -16,6 +18,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.example.codeeditor.constant.Constant;
+import com.example.codeeditor.repository.StartCodingInterviewRepository;
+import com.example.codeeditor.requestdto.CodingQuestionStatusDTO;
 import com.example.codeeditor.requestdto.RunCodeRequestDTO;
 import com.example.codeeditor.requestdto.SampleCodingTestCaseDTO;
 import com.example.codeeditor.service.ValidateRunCode;
@@ -32,6 +36,8 @@ public class ValidateRunCodeServiceImpl implements ValidateRunCode{
   private final RedisTemplate<Object, Object> sampleTestCaseOutput;
 
   private final ObjectMapper objectMapper;
+
+  private final StartCodingInterviewRepository startCodingInterviewRepository;
 
   public String sourceCodeFilePath (String sourceCode,String programmingLanguage) throws IOException {
     String extension = programmingLanguage.startsWith(".") ? programmingLanguage.substring(1) : programmingLanguage;
@@ -152,6 +158,9 @@ public class ValidateRunCodeServiceImpl implements ValidateRunCode{
     Constant constant = new Constant();
     HashSet<String> validProgrammingLanguage = constant.nameOfProgrammingLanguagesAllowed;
     String programmingLanguage = runCodeRequestDTO.getProgrammingLanguage();
+    // Set from the token below; null when no token was sent. Used when the round-2 score is stored.
+    Integer userId = null;
+    Integer appliedJobId = null;
 
     // Validate the programming language
     if (!validProgrammingLanguage.contains(programmingLanguage)){
@@ -168,6 +177,21 @@ public class ValidateRunCodeServiceImpl implements ValidateRunCode{
       unsupportedLanguageResult.setOutput("Execution is not supported yet for " + programmingLanguage);
       unsupportedLanguageResult.setIsTestCasePassedORFailed(0);
       return unsupportedLanguageResult;
+    }
+
+    // Resolve who is running the code from the round-2 link token (never from client-sent ids)
+    if (runCodeRequestDTO.getToken() != null && !runCodeRequestDTO.getToken().isBlank()) {
+      Optional<StartCodingInterviewRepository.UserJob> userJob =
+          startCodingInterviewRepository.fetchUserAndJobByToken(runCodeRequestDTO.getToken());
+      if (userJob.isEmpty() || userJob.get().round() != 2) {
+        SampleCodingTestCaseDTO invalidTokenResult = new SampleCodingTestCaseDTO();
+        invalidTokenResult.setOutput("Invalid coding round link");
+        invalidTokenResult.setIsTestCasePassedORFailed(0);
+        return invalidTokenResult;
+      }
+      userId = userJob.get().userId();
+      appliedJobId = userJob.get().appliedJobId();
+      log.info("Run code requested by userId={}, appliedJobId={}", userId, appliedJobId);
     }
 
     // Write the source code to a file under generated-code/<extension>/
@@ -193,6 +217,7 @@ public class ValidateRunCodeServiceImpl implements ValidateRunCode{
       SampleCodingTestCaseDTO compileFailureResult = new SampleCodingTestCaseDTO();
       compileFailureResult.setOutput("Compilation failed" + " " + compileResult.output());
       compileFailureResult.setIsTestCasePassedORFailed(0);
+      recordTestCaseResult(runCodeRequestDTO.getToken(), userId, appliedJobId, runCodeRequestDTO.getProgrammingInput(), false);
       return compileFailureResult;
     }
 
@@ -225,10 +250,48 @@ public class ValidateRunCodeServiceImpl implements ValidateRunCode{
       boolean isPassed = String.valueOf(expectedOutput).trim().equals(runResult.output().trim());
       result.setIsTestCasePassedORFailed(isPassed ? 1 : 0);
 
-      // In future will 
+      // In future will
     }
 
+
+    recordTestCaseResult(runCodeRequestDTO.getToken(), userId, appliedJobId, runCodeRequestDTO.getProgrammingInput(),
+        result.getIsTestCasePassedORFailed() == 1);
+
     return result;
+  }
+
+  private static final int SECOND_ROUND = 2;
+  private static final int SCORE_PENDING_STATUS = 1;
+  // 5 test cases per question x 2 points = a score out of 10
+  private static final int POINTS_PER_PASSED_TEST_CASE = 2;
+
+  // /runcode checks one test case per call, so each candidate's results are kept per token in a redis
+  // hash (test case input -> 1 passed / 0 failed). Re-running a test case overwrites its entry instead of
+  // adding to it, so the score can't go past 10, and one candidate's runs never touch another's.
+  private void recordTestCaseResult(String token, Integer userId, Integer appliedJobId, Object programmingInput, boolean passed) {
+    if (token == null || token.isBlank() || userId == null) {
+      return; // no round-2 token, so there is no candidate to store a score for
+    }
+
+    String hashKey = "codingRound:result:" + token;
+    sampleTestCaseOutput.opsForHash().put(hashKey, objectMapper.writeValueAsString(programmingInput), passed ? 1 : 0);
+    sampleTestCaseOutput.expire(hashKey, Duration.ofDays(5)); // same lifetime as the link
+
+    Map<Object, Object> results = sampleTestCaseOutput.opsForHash().entries(hashKey);
+    int passedTestCase = (int) results.values().stream().filter(v -> ((Number) v).intValue() == 1).count();
+
+    CodingQuestionStatusDTO codingQuestionStatusDTO = CodingQuestionStatusDTO.builder()
+        .totalTestCase(results.size())
+        .passedTestCase(passedTestCase)
+        .failedTestCase(results.size() - passedTestCase)
+        .build();
+    log.info("Total Number of test cases ::::: {}", codingQuestionStatusDTO.getTotalTestCase());
+    log.info("Passed Number of test cases ::::: {}", codingQuestionStatusDTO.getPassedTestCase());
+    log.info("Failed Number of test cases :::::: {}", codingQuestionStatusDTO.getFailedTestCase());
+
+    // recruitment_workflow.user_interview_score, status 1 = pending, round 2 = coding round
+    startCodingInterviewRepository.insertIntoUserInterviewScore(userId, appliedJobId,
+        codingQuestionStatusDTO.getPassedTestCase() * POINTS_PER_PASSED_TEST_CASE, SCORE_PENDING_STATUS, SECOND_ROUND);
   }
 
 }

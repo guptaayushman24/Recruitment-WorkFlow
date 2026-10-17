@@ -15,4 +15,5 @@ public class UserData {
     private String lastName;
     private String email;
     private String resumePath;
+    private String userPassword;
 }

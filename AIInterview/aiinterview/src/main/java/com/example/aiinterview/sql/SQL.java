@@ -28,4 +28,16 @@ public class SQL {
   public static String UPDATE_USER_QUESTION_RESPONSE_STATUS = "UPDATE recruitment_workflow.user_question_response SET status = ? WHERE user_id = ? AND applied_job_id = ?";
 
   public static String FETCH_JOB_DESCRIPTION = "SELECT job_description FROM recruitment_workflow.jobs WHERE id = ?";
+
+  // Candidates matched to a job (embedding.status is a varchar: '2' = matched) that are still missing
+  // their interview questions or their round-1 link (store_data = "userId/appliedJobId")
+  public static String FIND_MATCHES_MISSING_INTERVIEW =
+      "SELECT e.user_id, e.applied_jobs FROM recruitment_workflow.embedding e " +
+      "WHERE e.status = '2' AND e.applied_jobs IS NOT NULL " +
+      "AND (NOT EXISTS (SELECT 1 FROM recruitment_workflow.user_question q WHERE q.user_id = e.user_id AND q.job_id = e.applied_jobs) " +
+      "OR NOT EXISTS (SELECT 1 FROM recruitment_workflow.user_link l WHERE l.store_data = e.user_id::text || '/' || e.applied_jobs::text))";
+
+  public static String FETCH_RESUME_AND_JOB_DETAIL =
+      "SELECT u.skills, u.experience, u.project_components, j.job_skills, j.job_experience, j.job_components " +
+      "FROM recruitment_workflow.user_data u, recruitment_workflow.jobs j WHERE u.id = ? AND j.id = ?";
 }

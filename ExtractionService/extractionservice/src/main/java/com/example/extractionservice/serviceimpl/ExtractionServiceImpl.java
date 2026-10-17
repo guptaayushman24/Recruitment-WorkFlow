@@ -9,6 +9,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.extractionservice.ai.AIAssistant;
@@ -55,6 +56,7 @@ public class ExtractionServiceImpl implements ExtractionService{
   private final SaveJobEmbedding saveJobEmbedding;
   private final CONSTANT constant;
   private final PublisherService publisherService;
+  private final PasswordEncoder passwordEncoder;
 
   @Async
   @Override
@@ -62,6 +64,7 @@ public class ExtractionServiceImpl implements ExtractionService{
      // Send to the pub-sub
     ExtractionResumeJobDescriptionDTO extractionResumeJobDescriptionDTO = new ExtractionResumeJobDescriptionDTO();
     ObjectMapper objectMapper = new ObjectMapper();
+    
     String text = "";
     try (PDDocument document = Loader.loadPDF(resumeBytes)) {
       text = new PDFTextStripper().getText(document);
@@ -144,8 +147,6 @@ public class ExtractionServiceImpl implements ExtractionService{
 
 
   @Override
-  // fixedRate is in milliseconds - 2 min for testing, switch to 1800000 (30 min) after testing
-  //@Scheduled(fixedRate = 120000)
   public void findMatchInUserResumeAndJobDescription() throws JsonProcessingException{
     log.info("Helloooo :::::: scheduler");
      ExtractionResumeJobDescriptionDTO extractionResumeJobDescriptionDTO = new ExtractionResumeJobDescriptionDTO();

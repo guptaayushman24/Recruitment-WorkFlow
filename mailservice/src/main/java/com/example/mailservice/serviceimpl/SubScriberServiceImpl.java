@@ -18,10 +18,9 @@ import tools.jackson.databind.ObjectMapper;
 @RequiredArgsConstructor
 @Slf4j
 public class SubScriberServiceImpl {
-  // private final EmailServiceImpl emailServiceImpl;
   private final PubSubTemplate pubSubTemplate;
   private final EmailService emailService;
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final ObjectMapper objectMapper;
 
   @PostConstruct
   public void startSubscriber() {
@@ -74,6 +73,12 @@ public class SubScriberServiceImpl {
       UserInterviewReport userInterviewReport = objectMapper.readValue(payload, UserInterviewReport.class);
       // Pass the secureLinkToken in the email service for sending the email
       emailService.sendUserScore(userInterviewReport);
+
+      // Extract the userScore if the score is greater than equal to 0.65 then send the email for the coding round
+      if (userInterviewReport.getUserScore()>=0.60){
+        
+      }
+
 
     } catch (Exception e) {
       log.error("Something went wrong processing user-interview-evaluation message", e);
